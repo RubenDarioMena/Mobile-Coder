@@ -7,13 +7,15 @@
 - **Archivos en una carpeta del teléfono.** El usuario elige en qué carpeta del teléfono vive la estructura de archivos de cada proyecto. Esto pesa en la plataforma: hay que comprobar qué permite cada opción. Hasta donde sé, el navegador de Android no deja elegir una carpeta (el selector de carpetas de la API de acceso a archivos es solo de escritorio), y una app nativa sí.
 - **Plataforma abierta:** app instalable, web o nativa. Se decide tras **una conversación larga y con consultas**. Entre otros factores: acceso a carpetas, peso y arranque del intérprete de Python, actualización de la UI compartida, distribución y funcionamiento sin conexión.
 - **Teléfono en horizontal: no.** Solo vertical.
+- **Hoja inferior: consola y vista previa.** Ocupa el lugar del inspector del juego. La vista previa sirve para proyectos web (HTML, CSS y JS). *Pendiente:* si HTML y CSS entran ya en el primer paso o después de JS y Python.
+- **Análisis inicial de plataforma** (para la conversación, no es decisión): la vista previa no empuja hacia lo nativo, porque cualquier opción la pinta con un motor web (iframe en una web, WebView en Android, Flutter o React Native). Lo que sí empuja hacia una app Android es elegir la carpeta del teléfono. Flutter y React Native chocan con la UI compartida: obligarían a rehacerla o a meterla en una WebView, sumando una capa sin ganar nada. Candidata a discutir: app Android con la UI web dentro de una WebView (envoltorio propio en Kotlin o Capacitor). Comprobaciones antes de decidir: selector de carpetas en Chrome Android, teclado y ProtoMouse dentro de una WebView, arranque de Pyodide sin conexión, vista previa con archivos relativos servidos desde la carpeta y aislamiento ante bucles infinitos.
 
 ### Decisiones pendientes del usuario
 
 - La plataforma (conversación pendiente).
 - El intérprete de Python concreto y el motor de JavaScript.
 - Cómo se comparte la UI con Code Battle Lite.
-- El contenido de la hoja inferior (en el juego es la ficha ⓘ: objetivo, inspector y consola).
+- Cuándo entran HTML y CSS.
 - Las acciones de la barra superior propias de un IDE (en el juego: programas, ejecutar, sin teclado, mapa, pantalla completa y ⋯).
 
 ## Inicio del proyecto · documentación mínima · 5 de noviembre de 2026

@@ -45,7 +45,7 @@ Las sugerencias de funciones y variables siguen en el desplegable del editor; la
 - Un **asa arriba** cambia su alto. El alto se recuerda al cerrar y al recargar, guardado como proporción del área del código, para adaptarse cuando aparece el teclado.
 - Se cierra con la **flecha hacia abajo** o **llevando el asa hasta abajo**; vuelve la pestaña.
 - Tocar el código no la cierra: se puede leer mientras se escribe.
-- *Por adaptar:* su contenido (en el juego: objetivo, inspector y consola).
+- Contenido en el IDE: **consola** y **vista previa** (proyectos HTML, CSS y JS). En el juego son objetivo, inspector y consola.
 
 ## Ajustes
 
