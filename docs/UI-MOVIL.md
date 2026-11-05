@@ -4,6 +4,8 @@ Decisiones acordadas para el editor del teléfono de Code Battle Lite que este I
 
 ## Principios
 
+- Solo vertical: no hay distribución para el teléfono en horizontal.
+- Esta interfaz se comparte con Code Battle Lite; la ejecución de cada proyecto es propia.
 - Máximo espacio útil para el código, iconos claros y pocos toques por operación.
 - El teclado nativo se respeta: las barras propias quedan justo encima de él y el código ocupa el resto de la pantalla visible.
 - Tocar las barras no cierra el teclado, no pierde la selección ni mueve el cursor sin querer.
