@@ -66,9 +66,13 @@ jobs:
         run: |
           cp app/build/outputs/apk/debug/app-debug.apk mobile-coder.apk
           NOTAS="APK de prueba (depuración) de ${GITHUB_SHA::7}. Se reemplaza en cada push a main."
-          if gh release view prueba >/dev/null 2>&1; then
-            gh release upload prueba mobile-coder.apk --clobber
-            gh release edit prueba --notes "$NOTAS" --target "$GITHUB_SHA"
-          else
-            gh release create prueba mobile-coder.apk --prerelease --title "APK de prueba" --notes "$NOTAS" --target "$GITHUB_SHA"
-          fi
+          # La API de releases a veces responde 500: se reintenta.
+          publicar() {
+            if gh release view prueba >/dev/null 2>&1; then
+              gh release upload prueba mobile-coder.apk --clobber && gh release edit prueba --notes "$NOTAS"
+            else
+              gh release create prueba mobile-coder.apk --prerelease --title "APK de prueba" --notes "$NOTAS" --target "$GITHUB_SHA"
+            fi
+          }
+          for i in 1 2 3 4; do publicar && exit 0; echo "Reintento $i…"; sleep $((i * 10)); done
+          exit 1
