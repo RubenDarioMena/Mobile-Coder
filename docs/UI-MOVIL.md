@@ -50,3 +50,23 @@ Las sugerencias de funciones y variables siguen en el desplegable del editor; la
 ## Ajustes
 
 Lenguaje y tamaño de letra se elegirán al empezar y después solo en Ajustes. El resaltado de sintaxis está activo por defecto.
+
+## Estado en la primera implementación (0.1.0)
+
+Hecho como está descrito arriba:
+- reparto de la pantalla;
+- barra de edición con ProtoMouse y variantes;
+- barra de inserción en dos conjuntos que se cambian de sitio sin teclado;
+- hoja inferior con pestaña, asa, alto recordado y cierre arrastrando;
+- ajuste al teclado.
+
+La hoja muestra la **consola**; la vista previa llega con HTML y CSS.
+
+Barra superior provisional:
+- archivos;
+- archivo abierto (lenguaje y estado de guardado);
+- ▶/■;
+- sin teclado;
+- ⋯ (archivos, letra, ajustes del editor, acerca de).
+
+Pendiente: elegir lenguaje y letra al empezar. Probado solo en Chromium emulando un teléfono (ver `PROGRESO.md`).

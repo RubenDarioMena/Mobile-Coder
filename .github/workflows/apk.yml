@@ -35,6 +35,19 @@ jobs:
       - name: Compilar
         run: ./gradlew --no-daemon assembleDebug
 
+      # Lo que lleva el APK, en el registro: paquete, SDK, permisos y los activos que la app necesita sin conexión.
+      - name: Revisar el APK
+        run: |
+          APK=app/build/outputs/apk/debug/app-debug.apk
+          ls -l "$APK"
+          AAPT2=$(ls -d "$ANDROID_HOME"/build-tools/*/aapt2 | sort -V | tail -1)
+          "$AAPT2" dump badging "$APK" | grep -E "^(package|sdkVersion|targetSdkVersion|uses-permission|application-label|launchable-activity)"
+          for f in assets/index.html assets/app/motor-js.js assets/app/motor-python.js assets/cmg/ORIGEN.json \
+                   assets/vendor/pyodide/pyodide.mjs assets/vendor/pyodide/pyodide.asm.mjs assets/vendor/pyodide/pyodide.asm.wasm \
+                   assets/vendor/pyodide/python_stdlib.zip; do
+            unzip -l "$APK" "$f" | grep -q "$f" && echo "ok  $f" || { echo "FALTA $f"; exit 1; }
+          done
+
       - uses: actions/upload-artifact@v4
         with:
           name: mobile-coder-debug
