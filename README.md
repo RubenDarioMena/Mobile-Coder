@@ -2,9 +2,10 @@
 
 Un IDE para el teléfono, pensado para escribir código con el pulgar y aprovechar el teclado nativo sin pelearse con él. Reutiliza la ergonomía táctil del editor del juego **Code Battle Lite** ([RubenDarioMena/Code-Battles_lite](https://github.com/RubenDarioMena/Code-Battles_lite)).
 
-**Estado:** primera implementación (0.1.0).
+**Estado:** 0.2.0, servicios de lenguaje.
 - Es una app Android hecha con un envoltorio en Kotlin y la interfaz web dentro de una WebView.
-- Edita y ejecuta **JavaScript y Python 3.14**, **sin conexión**.
+- Edita y ejecuta **JavaScript y Python 3.14**, y edita **HTML y CSS**, **sin conexión**.
+- Sugerencias, problemas e «ir a la definición» con TypeScript, los servicios de HTML y CSS de VS Code y Jedi. Los archivos se conocen entre ellos: `import`, lo que enlaza una página y las clases de sus hojas de estilo.
 - Guarda los archivos en la carpeta del teléfono que elijas.
 - Solo funciona en vertical.
 - Se ha probado en Chromium emulando un teléfono; **falta probarla en un teléfono real**.
@@ -12,9 +13,10 @@ Un IDE para el teléfono, pensado para escribir código con el pulgar y aprovech
 ## Probar
 
 **En el teléfono (APK):**
-1. Abre [Actions → APK de prueba](https://github.com/RubenDarioMena/Mobile-Coder/actions/workflows/apk.yml).
-2. Entra en la última ejecución en verde y descarga el artefacto `mobile-coder-debug`. Es un .zip con `app-debug.apk` dentro.
-3. Descomprímelo e instala el APK. Android pedirá permiso para instalar apps de esa fuente.
+1. Descarga el último APK: <https://github.com/RubenDarioMena/Mobile-Coder/releases/download/prueba/mobile-coder.apk>. Cada push a `main` lo reemplaza en la release «prueba».
+2. Instálalo. Android pedirá permiso para instalar apps de esa fuente.
+
+También queda como artefacto `mobile-coder-debug` (un .zip) en cada ejecución de [Actions → APK de prueba](https://github.com/RubenDarioMena/Mobile-Coder/actions/workflows/apk.yml).
 
 Cada APK de prueba se instala encima del anterior sin perder la carpeta elegida.
 
@@ -51,7 +53,7 @@ Desde GitHub, sin instalar nada: `https://raw.githack.com/RubenDarioMena/Mobile-
   - Se guarda solo.
   - Sin carpeta elegida, la app usa unos borradores propios.
 
-Lo que falta está en [PROGRESO.md](PROGRESO.md); por ejemplo, `input()` en Python, borrar o renombrar archivos, y HTML/CSS con vista previa.
+Lo que falta está en [PROGRESO.md](PROGRESO.md); por ejemplo, `input()` en Python, borrar o renombrar archivos y la vista previa de HTML/CSS.
 
 ## Documentos
 

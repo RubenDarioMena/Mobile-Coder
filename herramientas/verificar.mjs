@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Comprobaciones rápidas, sin navegador ni Android:
-// - la copia del editor (web/cmg/) y Pyodide (web/vendor/pyodide/) siguen idénticas a sus manifiestos;
+// - la copia del editor (web/cmg/), Pyodide y los servicios de lenguaje (web/vendor/) siguen idénticos a sus manifiestos;
 // - los scripts propios de la app se pueden analizar (node --check).
 //
 //   node herramientas/verificar.mjs
@@ -15,7 +15,9 @@ const sha256 = (f) => createHash("sha256").update(fs.readFileSync(f)).digest("he
 const fallos = [];
 let revisados = 0;
 
-for (const [carpeta, nombre] of [["web/cmg", "ORIGEN.json"], ["web/vendor/pyodide", "MANIFEST.json"]]) {
+const COPIAS = [["web/cmg", "ORIGEN.json"], ["web/vendor/pyodide", "MANIFEST.json"], ["web/vendor/typescript", "MANIFEST.json"],
+  ["web/vendor/servicios-web", "MANIFEST.json"], ["web/vendor/jedi", "MANIFEST.json"]];
+for (const [carpeta, nombre] of COPIAS) {
   const dir = path.join(raiz, carpeta), manifiesto = JSON.parse(fs.readFileSync(path.join(dir, nombre), "utf8"));
   for (const [rel, huella] of Object.entries(manifiesto.archivos)) {
     const f = path.join(dir, rel);

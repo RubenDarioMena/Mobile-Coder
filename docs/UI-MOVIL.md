@@ -70,3 +70,10 @@ Barra superior provisional:
 - ⋯ (archivos, letra, ajustes del editor, acerca de).
 
 Pendiente: elegir lenguaje y letra al empezar. Probado solo en Chromium emulando un teléfono (ver `PROGRESO.md`).
+
+## Servicios de lenguaje (0.2.0)
+
+- **Sugerencias** de código: van en el desplegable del editor, junto al cursor, como se acordó («las sugerencias siguen en el desplegable del editor; la barra no las duplica»). Se tocan sin cerrar el teclado.
+- **Placa «↗»:** con el cursor quieto sobre algo que está en otro archivo (un `import`, un `href`, una clase), una placa metálica lo abre. Atrás vuelve.
+- **Se aparta de lo acordado:** la hoja inferior tiene una segunda pestaña, **Problemas** (errores y avisos de todo el proyecto, con contador). Lo acordado era consola y vista previa; la vista previa sigue pendiente y sería la tercera pestaña. A revisar con el usuario.
+- HTML y CSS tienen su propia barra de inserción (pares `< >`, etiquetas, enlazar CSS/JS, reglas y propiedades). ▶ queda apagado hasta que exista la vista previa.

@@ -105,7 +105,47 @@ button { font: inherit; color: inherit; }
 .hoja-asa span { width: 56px; height: 9px; border-radius: 3px; opacity: .75; background: repeating-linear-gradient(180deg, var(--metal-hi) 0 1.5px, var(--metal-negro) 1.5px 3px); }
 .hoja-asa:hover span, .hoja-asa:focus-visible span, .hoja.arrastrando .hoja-asa span { opacity: 1; }
 .hoja-cab { display: flex; align-items: center; gap: 6px; min-width: 0; }
-.hoja-titulo { margin: 0 4px 0 2px; font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+/* Pestañas: consola y problemas. Lo de la consola (motor y limpiar) solo se ve en su pestaña. */
+.hoja-pestanas { flex: none; display: flex; gap: 2px; }
+.hoja-pestana {
+  display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 9px; border: 0; border-radius: 7px; background: none; cursor: pointer;
+  color: var(--muted); font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+}
+.hoja-pestana[aria-selected="true"] { color: var(--ink); background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--line); }
+.hoja-pestana:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.cuenta { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; font-size: 11px; line-height: 18px; letter-spacing: 0; text-align: center; color: #1C1405; background: var(--warn); }
+.cuenta:empty { display: none; }
+.cuenta[data-gravedad="error"] { color: #1C0B09; background: var(--bad); }
+.hoja[data-pestana="problemas"] .motor-estado, .hoja[data-pestana="problemas"] #b-limpiar { visibility: hidden; }
+.problemas {
+  min-height: 0; overflow: auto; overscroll-behavior: contain; padding: 4px; border-radius: 8px; background: var(--code-bg);
+  box-shadow: inset 0 0 0 1px var(--metal-negro), inset 0 0 0 2px var(--line);
+}
+.p-grupo + .p-grupo { margin-top: 6px; }
+.p-archivo { padding: 4px 6px 2px; color: var(--muted); font: 600 11.5px/1.3 var(--f-code); overflow-wrap: anywhere; }
+.problema {
+  display: grid; grid-template-columns: 10px auto minmax(0, 1fr); align-items: baseline; gap: 8px; width: 100%; min-height: 36px; padding: 7px 6px;
+  border: 0; border-radius: 6px; background: none; color: var(--ink); text-align: left; cursor: pointer; font-size: 12.5px;
+}
+.problema:hover, .problema:focus-visible { background: var(--accent-soft); outline: none; }
+.p-ico { width: 9px; height: 9px; border-radius: 50%; background: var(--warn); align-self: center; }
+.p-ico.p-error { background: var(--bad); }
+.p-linea { color: var(--muted); font: 12px var(--f-code); }
+.p-texto { overflow-wrap: anywhere; }
+.p-vacio { margin: 8px; color: var(--muted); font-size: 12.5px; }
+/* HTML y CSS todavía no se ejecutan: ▶ queda apagado (sigue respondiendo para explicar por qué). */
+.b-ejecutar.sin-motor { opacity: .45; filter: grayscale(1); }
+
+/* ---------- Sugerencias de los servicios de lenguaje e «ir a otro archivo» ----------
+   Las mismas placas que las sugerencias del editor (.sugerencias de edicion.css). */
+.sugerencias.mc-completar, .sugerencias.mc-ir { position: fixed; left: 0; top: 0; z-index: 88; }
+.sugerencias.mc-completar { padding: 3px; }
+.sugerencias.mc-completar .sug { min-height: 34px; padding: 5px 8px; }
+.sugerencias.mc-completar .sug .nota { white-space: nowrap; }
+.sugerencias.mc-ir { width: auto; max-width: calc(100vw - 12px); padding: 3px; }
+.sugerencias.mc-ir .sug { min-height: 36px; padding: 6px 10px; gap: 8px; white-space: nowrap; }
+.sugerencias.mc-ir .ir-flecha { color: var(--accent); font-weight: 800; }
+.sugerencias.mc-ir .ir-texto { font-size: 12.5px; }
 .motor-estado { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: 12px; }
 .motor-estado[data-estado="cargando"] { color: var(--warn); }
 .motor-estado[data-estado="fallo"] { color: var(--bad); }

@@ -10,12 +10,38 @@
     let estado = "inactivo", actual = null;   // actual: { lenguaje, worker?, inicio, archivo, revision }
     const poner = (e) => { estado = e; alEstado(e, actual); };
 
+    // Un error en la consola: el mensaje, su pila y una nota que lleva a la línea. e: { nombre, mensaje, pila?, linea?
+    // (del archivo abierto), destino? ({ ruta, linea } donde ocurrió) o ruta + linea (de otro archivo) }.
+    function informar(datos, e) {
+      const destino = e.destino || (e.ruta && e.ruta !== datos.archivo ? { ruta: e.ruta, linea: e.linea } : null);
+      const linea = e.ruta && e.ruta !== datos.archivo ? null : e.linea;
+      consola.escribir("error", `${e.nombre}: ${e.mensaje}\n` + (e.pila && e.pila.length ? e.pila.join("\n") + "\n" : ""));
+      if (linea) alError(linea, datos);
+      const fuera = destino && destino.ruta !== datos.archivo ? destino : null;
+      const donde = fuera ? ` en ${fuera.ruta}${fuera.linea ? ":" + fuera.linea : ""}` : linea ? ` en la línea ${linea}` : "";
+      consola.nota("fallo", `✗ ${e.nombre}${donde}`, fuera && fuera.linea ? fuera : linea);
+    }
+
     // ---------- JavaScript: un Worker nuevo en cada ejecución ----------
     let workerJS = null;
     function ejecutarJS(doc) {
       if (workerJS) workerJS.terminate();
+      // Los import del proyecto: el grafo de módulos (app/modulos.js). Un fallo aquí no llega a arrancar el motor.
+      const grafo = MC.modulos.preparar(doc.archivo, { ...doc.archivos, [doc.archivo]: doc.texto });
+      const datos = { lenguaje: "js", inicio: performance.now(), archivo: doc.archivo, revision: doc.revision };
+      if (!grafo.ok) {
+        // Un import que no se encuentra (o circular, o un paquete de npm): se informa sin arrancar el motor.
+        // ejecutar() pone «corriendo» al volver; el final llega en la tarea siguiente.
+        actual = datos;
+        informar(datos, grafo.error);
+        setTimeout(() => { if (actual === datos) { actual = null; poner("inactivo"); } });
+        return;
+      }
       const w = (workerJS = new Worker("app/motor-js.js", { type: "module" }));
-      const datos = { lenguaje: "js", worker: w, inicio: performance.now(), archivo: doc.archivo, revision: doc.revision };
+      datos.worker = w;
+      // Si acorn vio un error de sintaxis, se ejecuta igual (acorn puede no conocer sintaxis nueva) y, si el motor
+      // confirma un SyntaxError sin decir dónde, se usa la línea de acorn.
+      const sintaxis = grafo.modulos.find((x) => x.sintaxis);
       let errores = 0;
       w.onmessage = (ev) => {
         const m = ev.data;
@@ -24,15 +50,9 @@
         else if (m.tipo === "limpiar") consola.limpiar();
         else if (m.tipo === "error") {
           errores++;
-          let linea = m.linea, mensaje = m.mensaje;
           // El navegador no dice dónde está un error de sintaxis de un módulo; acorn (del editor) sí.
-          if (m.nombre === "SyntaxError" && !linea && window.acorn) {
-            try { window.acorn.parse(doc.texto, { ecmaVersion: "latest", sourceType: "module", allowHashBang: true }); }
-            catch (e) { if (e.loc) linea = e.loc.line; }
-          }
-          consola.escribir("error", `${m.nombre}: ${mensaje}\n` + (m.pila && m.pila.length ? m.pila.join("\n") + "\n" : ""));
-          if (linea) alError(linea, datos);
-          consola.nota("fallo", linea ? `✗ ${m.nombre} en la línea ${linea}` : `✗ ${m.nombre}`, linea);
+          if (m.nombre === "SyntaxError" && !m.linea && !m.destino && sintaxis) informar(datos, { nombre: m.nombre, mensaje: m.mensaje, ruta: sintaxis.ruta, linea: sintaxis.sintaxis.linea });
+          else informar(datos, { nombre: m.nombre, mensaje: m.mensaje, pila: m.pila, linea: m.linea, destino: m.destino });
         } else if (m.tipo === "fin") {
           if (actual !== datos) return;
           // Con errores, el ✗ ya lo dijo: el final queda como nota neutra.
@@ -47,7 +67,7 @@
         actual = null; poner("inactivo");
       };
       actual = datos;
-      w.postMessage({ tipo: "ejecutar", codigo: doc.texto, archivo: doc.archivo });
+      w.postMessage({ tipo: "ejecutar", codigo: doc.texto, archivo: doc.archivo, modulos: grafo.modulos.map(({ ruta, texto, deps }) => ({ ruta, texto, deps })) });
     }
 
     // ---------- Python: un Worker que se carga una vez y se reutiliza ----------
@@ -71,8 +91,9 @@
           else {
             consola.escribir("error", m.error.texto + "\n");
             if (m.error.linea) alError(m.error.linea, actual);
-            const tipo = (/(\w+(?:Error|Exception|Interrupt|Exit)|StopIteration)\b[^\n]*$/.exec(m.error.texto) || [])[1] || "Error";
-            consola.nota("fallo", m.error.linea ? `✗ ${tipo} en la línea ${m.error.linea}` : `✗ ${tipo}`, m.error.linea);
+            const tipo = (/(\w+(?:Error|Exception|Interrupt|Exit|Warning)|StopIteration)\b[^\n]*$/.exec(m.error.texto) || [])[1] || "Error";
+            const d = m.error.destino, fuera = d && d.ruta !== actual.archivo ? d : null;
+            consola.nota("fallo", fuera ? `✗ ${tipo} en ${fuera.ruta}:${fuera.linea}` : m.error.linea ? `✗ ${tipo} en la línea ${m.error.linea}` : `✗ ${tipo}`, fuera || m.error.linea);
           }
           actual = null; poner("inactivo");
         }
@@ -89,7 +110,7 @@
     }
     function enviarPython(doc) {
       actual.id = ++siguiente;
-      workerPy.postMessage({ tipo: "ejecutar", id: actual.id, codigo: doc.texto, archivo: doc.archivo });
+      workerPy.postMessage({ tipo: "ejecutar", id: actual.id, codigo: doc.texto, archivo: doc.archivo, archivos: doc.archivos || {} });
     }
     function ejecutarPython(doc) {
       if (!workerPy || py.estado === "fallo") crearPython();
@@ -101,7 +122,7 @@
     return {
       get estado() { return estado; },
       get python() { return { ...py }; },
-      // doc: { lenguaje: "js" | "python", texto, archivo, revision }
+      // doc: { lenguaje: "js" | "python", texto, archivo (su ruta en el proyecto), revision, archivos ({ ruta: texto } del proyecto) }
       ejecutar(doc) {
         if (estado === "corriendo") this.detener();
         consola.nota("inicio", `▶ ${doc.archivo}`);

@@ -1,5 +1,84 @@
 # Progreso
 
+## Servicios de lenguaje y archivos que se conocen entre ellos · 5 de noviembre de 2026
+
+Pedido por el usuario: implementar Jedi, el servicio de lenguaje de TypeScript, `vscode-html-languageservice` y `vscode-css-languageservice`, y que los documentos se comuniquen entre ellos (lo que una página enlaza, los `import`).
+
+- **Qué hay:**
+  - **Servicios de lenguaje**, sin conexión y en Workers (fuera del hilo de la interfaz):
+    - **JavaScript:** TypeScript 6.0.3 (Apache-2.0), con todo el proyecto a la vista. La versión 7 es nativa (Go) y no corre en una WebView. Los mensajes de error llegan en español (vienen con TypeScript).
+    - **HTML y CSS:** `vscode-html-languageservice` 5.6.2 y `vscode-css-languageservice` 6.3.10 (MIT). Sus mensajes están en inglés.
+    - **Python:** Jedi 0.19.2 y parso 0.8.6 (MIT), sobre un segundo Pyodide, aparte del que ejecuta los programas.
+  - **Qué hacen:**
+    - **Sugerencias** mientras se escribe con teclado, en el desplegable del editor, junto al cursor. Se ponen tocándolas o con Tab/Intro, flechas y Escape.
+    - **Problemas:** la hoja tiene ahora dos pestañas, Consola y Problemas. Los problemas se agrupan por archivo, con un contador, y tocar uno lleva a su línea, también en otro archivo. En el archivo abierto se marca la línea del primer error, salvo la que se está escribiendo.
+    - **Ir a otro archivo:** con el cursor quieto sobre algo definido o enlazado en otro archivo, aparece una placa «↗» que lo abre en esa línea. Atrás vuelve.
+  - **Archivos que se conocen entre ellos:**
+    - **JS:**
+      - completa lo que exporta otro archivo y las rutas de los `import` (con `.js`);
+      - avisa de módulos y nombres que no existen;
+      - lleva a la definición.
+    - **HTML:**
+      - avisa si un `href`/`src` apunta a un archivo que no está;
+      - completa rutas y, en `class="…"`/`id="…"`, las clases e ids de sus hojas de estilo (las enlazadas y su `<style>`);
+      - abre lo enlazado, y una clase lleva a su regla en el CSS.
+      - El `<script>` y el `<style>` de la página usan los servicios de JS y CSS.
+    - **CSS:** tras `.` o `#` sugiere las clases e ids que usan las páginas que la enlazan.
+    - **Python:** Jedi resuelve los `import` entre `.py` del proyecto (completa, lleva a la definición y avisa si un módulo no está).
+  - **Ejecutar con imports:**
+    - **JavaScript:** los `import` relativos entre archivos del proyecto (`./`, `../`, `/`; sin extensión se prueba `.js`, `.mjs` e `index.js`). El grafo lo arma `app/modulos.js` con acorn, y cada archivo se sirve al motor como un blob.
+      - Avisa, sin ejecutar, de un paquete de npm (sin conexión no hay), de un archivo que no está y de un import circular (todavía no se admite).
+      - Un error dentro de otro archivo dice en cuál y en qué línea; la nota lleva a él.
+    - **Python:** antes de cada ejecución, los `.py` y los datos de texto del proyecto se copian en `/proyecto`. El directorio del archivo es `sys.path[0]` y el directorio de trabajo, como en CPython. `open("datos.txt")` funciona, pero lo que el programa escriba no vuelve a la carpeta.
+  - **HTML y CSS en el editor:** se abren `.html`, `.htm`, `.css` y `.mjs`.
+    - Resaltado propio. Dentro de una página, el `<script>` se resalta como JS y el `<style>` como CSS.
+    - Comentar con `<!-- -->` y `/* */`, y sangría tras una etiqueta que abre.
+    - Barra de inserción propia: pares `< >`, etiquetas, enlazar CSS/JS, `<style>`/`<script>`, `class`/`id`, reglas, propiedades, `@media` y variables.
+    - Un `.html` nuevo empieza con una página que enlaza `estilos.css` y `main.js`.
+    - ▶ queda apagado en HTML y CSS y explica que la vista previa está pendiente.
+  - **Índice del proyecto** (`app/proyecto.js`): lo que hay en la carpeta y el texto de los archivos de código y de datos.
+    - Límites: 400 archivos, 200 carpetas, 1 MB por archivo y 20 s.
+    - Salta las carpetas ocultas, `node_modules`, `__pycache__`, `venv`, `build` y `dist`.
+    - Se vuelve a leer al regresar a la app si pasó más de un minuto.
+- **Decisiones (para revisar con el usuario):**
+  - **Se aparta de `docs/UI-MOVIL.md`:** la hoja tiene una segunda pestaña, Problemas; lo acordado era consola y vista previa. Queda registrado allí.
+  - **La placa «↗» solo aparece para ir a otro archivo.** Para no aparecer en cada nombre, no salta a definiciones dentro del mismo archivo.
+  - **Errores de tipos de JS:** solo los que casi siempre son un fallo real (nombres o módulos que no existen, redeclaraciones…), no todo el chequeo de tipos de TypeScript.
+  - **Cada `.js` se analiza como módulo**, igual que se ejecuta: dos archivos sin `import` no comparten variables globales. Así no hay falsas redeclaraciones. A cambio, los scripts clásicos de una página que comparten globales darán «no se encuentra el nombre».
+  - **HTML y CSS usan la estructura de JS** del editor compartido para el ProtoMouse, ampliar la selección y el modo sin teclado. Sus fichas tienen los mismos tipos y no hubo errores en las pruebas, pero ampliar la selección no entiende de etiquetas. Una estructura propia de HTML queda pendiente.
+  - **El segundo Pyodide (Jedi)** arranca 2,5 s después de abrir un `.py`, para no competir con el de la ejecución. Cuesta memoria; si en un teléfono modesto pesa demasiado, se puede compartir con el motor cuando no corre nada.
+  - **Herramientas:**
+    - `herramientas/lenguajes.mjs` deja las copias en `web/vendor/typescript/`, `servicios-web/` y `jedi/`, con `MANIFEST.json` y licencias.
+    - npm verifica las huellas con `herramientas/lenguajes/package-lock.json`, y las ruedas de PyPI se verifican con sha256.
+    - Los servicios de HTML/CSS se empaquetan sin cambios en un solo script con esbuild 0.28.2. Es la única compilación, y solo de código de terceros.
+    - Todo eso suma unos 17 MB más en `web/vendor/`.
+  - El envoltorio sirve `.d.ts` como texto y `.whl` como zip (`Activos.kt`).
+- **Verificación actual:**
+  - `node herramientas/verificar.mjs`: 144 comprobaciones; ahora incluye las copias de los servicios.
+  - `node pruebas/ui.mjs`: 32 de 32 en Chromium emulando un Pixel 7, con toda la red externa bloqueada. Las 26 de antes siguen pasando; una se ajustó al nuevo texto de «Nuevo archivo». Las 6 nuevas:
+    - JS: sugerencias de otro archivo, ponerlas, la placa «↗», abrir `lib/util.js` y volver con Atrás;
+    - problemas de JS entre archivos (en español, contador, línea marcada, tocar uno);
+    - HTML: clase de la hoja enlazada, etiqueta, enlace roto, abrir el CSS desde el `href` y ▶ en HTML/CSS;
+    - CSS: clases de la página que la enlaza;
+    - JS: ejecutar con imports, error en otro archivo con su pila, paquete de npm y archivo que falta;
+    - Python: Jedi completa un módulo del proyecto y avisa de un import roto, y la ejecución con `import`, datos del proyecto y error en otro archivo.
+  - En Chromium de escritorio, TypeScript cargó en unos 0,5 s y Jedi (con su Pyodide) en unos 5,5 s. La primera sugerencia de Python tardó unos 3 s.
+  - El APK se compila en Actions (ver abajo).
+- **Límites:**
+  - **Nada de esto se ha probado en un teléfono real.** Lo más incierto:
+    - que la WebView entregue a los Workers los activos de la app (TypeScript se carga con `importScripts` y XHR síncrono, y Jedi con `fetch`);
+    - el tiempo y la memoria de dos Pyodide en un teléfono modesto;
+    - las sugerencias con el teclado de Android (Gboard compone las palabras).
+  - Los mensajes de HTML y CSS están en inglés, y los de Jedi solo se traducen en los casos comunes.
+  - No hay vista previa de HTML: una página no se puede ejecutar todavía.
+- **Pendiente** (además de lo de la entrega anterior):
+  - vista previa de HTML/CSS/JS;
+  - la estructura de HTML/CSS para el ProtoMouse y el modo sin teclado;
+  - subrayar los problemas en el código (el editor compartido solo marca una línea);
+  - renombrar un símbolo en todo el proyecto;
+  - imports circulares en JS;
+  - compartir Pyodide entre Jedi y la ejecución si hace falta memoria.
+
 ## Primera implementación · envoltorio Kotlin, editor del teléfono, JS y Python sin conexión · 5 de noviembre de 2026
 
 - **Plataforma decidida por el usuario:** app Android con envoltorio propio en Kotlin y la interfaz web en una WebView (no Capacitor, ni Flutter, ni React Native).
@@ -53,7 +132,7 @@
   - `input()` en Python. Haría falta que el Worker espere: con memoria compartida (cabeceras COOP/COEP, si la WebView lo permite) o con una petición síncrona que responda el envoltorio.
   - Interrumpir Python sin recargarlo (también requiere memoria compartida).
   - Borrar y renombrar archivos.
-  - `import` entre archivos del proyecto (JS) y módulos propios en Python.
+  - `import` entre archivos del proyecto (JS) y módulos propios en Python. *Hecho en la entrega siguiente.*
   - Paquetes de Python más allá de la biblioteca estándar.
   - HTML, CSS y vista previa (acordado para después).
   - Elegir lenguaje y letra al empezar.

@@ -8,6 +8,7 @@ import java.io.IOException
 /**
  * Sirve los activos de la app (la carpeta web/ del repositorio) en https://appassets.androidplatform.net/assets/.
  * Tipos MIME propios: los Workers de módulo y Pyodide necesitan que .mjs llegue como JavaScript y .wasm como WebAssembly.
+ * Los servicios de lenguaje leen las bibliotecas de tipos de TypeScript (.d.ts, texto) y las ruedas de Jedi (.whl, zip).
  */
 class Activos(private val context: Context) : WebViewAssetLoader.PathHandler {
 
@@ -32,6 +33,7 @@ class Activos(private val context: Context) : WebViewAssetLoader.PathHandler {
             "html" to "text/html", "css" to "text/css", "js" to "text/javascript", "mjs" to "text/javascript",
             "json" to "application/json", "wasm" to "application/wasm", "zip" to "application/zip",
             "svg" to "image/svg+xml", "png" to "image/png", "txt" to "text/plain",
+            "ts" to "text/plain", "whl" to "application/zip",
         )
 
         fun tipoDe(ruta: String): String {

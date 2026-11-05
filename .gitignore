@@ -11,3 +11,6 @@ local.properties
 captures/
 # Node (las pruebas usan el Playwright instalado en el sistema)
 node_modules/
+
+# Herramientas: restos de descomprimir ruedas (herramientas/lenguajes.mjs)
+herramientas/lenguajes/.rueda-*

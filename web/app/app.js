@@ -1,7 +1,8 @@
 /* Mobile Coder: arranque y cableado de la interfaz.
  * El editor es el componente compartido de Code Battle Lite (CMGEditor, en web/cmg/) en forma de teléfono;
  * esta app aporta lo que en el juego pone su propia interfaz: barra superior, hoja de consola, archivos,
- * ajuste al teclado y la ejecución (app/motores.js). */
+ * ajuste al teclado, la ejecución (app/motores.js), HTML y CSS (app/editor-web.js) y los servicios de lenguaje
+ * (app/inteligencia.js), que ven todo el proyecto (app/proyecto.js). */
 (async () => {
   "use strict";
   const MC = window.MC;
@@ -9,8 +10,9 @@
   const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const leer = (k, d) => { try { const v = localStorage.getItem("mc-" + k); return v == null ? d : JSON.parse(v); } catch { return d; } };
   const escribir = (k, v) => { try { localStorage.setItem("mc-" + k, JSON.stringify(v)); } catch { /* sin almacenamiento */ } };
-  const NOMBRES = { js: "JavaScript", python: "Python" };
-  const CHIP = { js: "JS", python: "PY" };
+  const NOMBRES = { js: "JavaScript", python: "Python", html: "HTML", css: "CSS" };
+  const CHIP = { js: "JS", python: "PY", html: "HTML", css: "CSS" };
+  const EJECUTABLE = { js: true, python: true };   // HTML y CSS: la vista previa llega después
 
   // ---------- Ajuste al teclado ----------
   // En Android el envoltorio encoge la WebView con el teclado. En un navegador, el viewport visual manda:
@@ -46,10 +48,12 @@
   let actual = null;   // archivo abierto: { proyecto, ruta, lenguaje, guardado }
   const raiz = $("raiz-editor");
   const editor = CMGEditor.crear({
-    raiz, forma: "movil", adaptadores: { js: window.CMGAdaptadorJS, python: window.CMGAdaptadorPython }, proveedor, preferencias,
+    raiz, forma: "movil", proveedor, preferencias,
+    adaptadores: { js: window.CMGAdaptadorJS, python: window.CMGAdaptadorPython, html: window.MCLenguajesWeb.html, css: window.MCLenguajesWeb.css },
+    iconos: { ...window.ICONOS, ...window.MCLenguajesWeb.iconos },
     documento: { id: "inicio", lenguaje: "python", texto: "" },
     soloLectura: () => !actual,
-    alCambiar: () => programarGuardado(),
+    alCambiar: (d) => { if (actual && indice) indice.poner(actual.ruta, d.texto, { silencio: true }); programarGuardado(); },
     alEjecutar: () => alternarEjecucion(),
   });
   window.MC.editor = editor;
@@ -60,11 +64,12 @@
 
   // ---------- Consola y motores ----------
   const hoja = MC.hoja.crear({ contenedor: pieza("editor"), plantilla: $("plantilla-hoja"), leer, escribir });
-  const consola = MC.consola.crear($("consola"), { alLinea: (n) => { editor.irALinea(n); } });
+  // Una nota con línea lleva a ella; si es de otro archivo del proyecto, lo abre (Atrás vuelve).
+  const consola = MC.consola.crear($("consola"), { alLinea: (d) => { if (typeof d === "number") editor.irALinea(d); else if (d && d.ruta) inteligencia.saltar(d); } });
   const $estadoMotor = $("motor-estado");
   const pintarEstadoMotor = () => {
     if (!actual) { $estadoMotor.textContent = ""; return; }
-    if (actual.lenguaje === "js") { $estadoMotor.textContent = "JavaScript"; delete $estadoMotor.dataset.estado; return; }
+    if (actual.lenguaje !== "python") { $estadoMotor.textContent = EJECUTABLE[actual.lenguaje] ? NOMBRES[actual.lenguaje] : ""; delete $estadoMotor.dataset.estado; return; }
     const p = motores.python;
     $estadoMotor.textContent = p.estado === "listo" ? `Python ${p.version}` : p.estado === "cargando" ? "Python · cargando…" : p.estado === "fallo" ? "Python · no cargó" : "Python";
     $estadoMotor.dataset.estado = p.estado;
@@ -79,24 +84,82 @@
       $ejecutar.dataset.tip = corriendo ? "Detener" : "Ejecutar";
       document.body.dataset.ejecutando = String(corriendo);
     },
-    alError: (linea, run) => { if (run) editor.marcas(run.revision, [{ clase: "err", linea }]); },
+    alError: (linea, run) => { if (run) { marcaEjecucion = { revision: run.revision, linea }; pintarMarcas(); } },
     alPython: pintarEstadoMotor,
   });
   // Lo que se escribe con la hoja cerrada marca la pestaña.
   new MutationObserver(() => hoja.avisar()).observe($("consola"), { childList: true });
 
+  // La línea marcada en el código: el error de la última ejecución o, si no hay, el primer error de los servicios.
+  let marcaEjecucion = null, marcaProblemas = null;
+  function pintarMarcas() {
+    const rev = editor.documento().revision;
+    const l = (marcaEjecucion && marcaEjecucion.revision === rev && marcaEjecucion.linea) || (marcaProblemas && marcaProblemas.revision === rev && marcaProblemas.linea);
+    editor.marcas(rev, l ? [{ clase: "err", linea: l }] : []);
+  }
   async function ejecutar() {
     if (!actual) return;
+    if (!EJECUTABLE[actual.lenguaje]) {
+      hoja.abrir(); pestana("consola");
+      consola.nota("info", "La vista previa de HTML y CSS llega en una próxima entrega. Lo que falta o falla en la página está en Problemas.");
+      return;
+    }
     await guardar();
     const doc = editor.documento();
-    editor.marcas(doc.revision, []);
-    hoja.abrir();
-    motores.ejecutar({ lenguaje: doc.lenguaje, texto: doc.texto, archivo: MC.archivos.nombreDe(actual.ruta), revision: doc.revision });
+    marcaEjecucion = null; pintarMarcas();
+    inteligencia.cerrar();
+    hoja.abrir(); pestana("consola");
+    // El proyecto entero va con el programa: JS importa sus .js; Python, sus .py y sus datos.
+    const archivos = indice.textos((r) => r !== actual.ruta && (doc.lenguaje === "python" || MC.modulos.esJS(r)));
+    motores.ejecutar({ lenguaje: doc.lenguaje, texto: doc.texto, archivo: actual.ruta, revision: doc.revision, archivos });
   }
   function alternarEjecucion() { if (motores.estado === "corriendo") motores.detener(); else ejecutar(); }
   $ejecutar.addEventListener("pointerdown", (ev) => ev.preventDefault());
   $ejecutar.addEventListener("click", alternarEjecucion);
   $("b-limpiar").addEventListener("click", () => consola.limpiar());
+
+  // ---------- Pestañas de la hoja: consola y problemas ----------
+  const PESTANAS = { consola: $("consola"), problemas: $("problemas") };
+  function pestana(id) {
+    for (const [k, panel] of Object.entries(PESTANAS)) {
+      const b = $("tab-" + k), si = k === id;
+      b.setAttribute("aria-selected", String(si)); b.tabIndex = si ? 0 : -1; panel.hidden = !si;
+    }
+    $("hoja").dataset.pestana = id;
+    escribir("hoja-pestana", id);
+  }
+  for (const k of Object.keys(PESTANAS)) {
+    const b = $("tab-" + k);
+    b.addEventListener("pointerdown", (ev) => ev.preventDefault());
+    b.addEventListener("click", () => pestana(k));
+  }
+  pestana(leer("hoja-pestana", "consola") === "problemas" ? "problemas" : "consola");
+
+  // ---------- Servicios de lenguaje ----------
+  let indice = null;
+  const inteligencia = MC.inteligencia.crear({
+    editor, raiz, indice: () => indice, actual: () => actual,
+    abrir: (ruta) => abrir(ruta),
+    alMarca: (revision, linea) => { marcaProblemas = linea ? { revision, linea } : null; pintarMarcas(); },
+    $problemas: $("problemas"), $cuenta: $("cuenta-problemas"),
+  });
+  MC.ayuda = inteligencia;
+  function crearIndice(p) {
+    const ind = MC.proyecto.crear(p, {
+      alCambiar: (c) => {
+        if (ind !== indice) return;
+        if (c.tipo === "proyecto") {
+          // Lo que se está escribiendo manda sobre lo que se leyó de la carpeta.
+          if (actual && actual.proyecto === p) ind.poner(actual.ruta, editor.documento().texto, { silencio: true });
+          inteligencia.alProyecto();
+        } else if (c.tipo === "cambio") inteligencia.alArchivo(c.ruta, c.texto);
+        else if (c.tipo === "carpeta") inteligencia.alProyecto();
+      },
+    });
+    indice = ind;
+    ind.cargar();
+    return ind;
+  }
 
   // ---------- Modo sin teclado (interruptor de la barra superior) ----------
   const $teclado = $("b-teclado");
@@ -129,6 +192,7 @@
     if (texto === a.guardado) return cola;
     cola = cola.then(() => a.proyecto.escribir(a.ruta, texto)).then(() => {
       a.guardado = texto;
+      if (indice && a.proyecto === proyecto) indice.poner(a.ruta, texto);
       if (actual === a && editor.documento().texto === texto) marcarGuardado("ok", "Guardado");
     }).catch((e) => {
       marcarGuardado("error", "No se pudo guardar: " + (e.message || e));
@@ -136,13 +200,18 @@
     });
     return cola;
   }
-  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") guardar(); });
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") guardar();
+    // Al volver a la app, se relee la carpeta: pudo cambiar desde otra app.
+    else if (indice && indice.antiguedad > 60000) guardar().then(() => indice.cargar());
+  });
   addEventListener("pagehide", () => guardar());
   // El envoltorio Android lo llama al pasar a segundo plano.
   MC.guardar = guardar;
 
   // ---------- Abrir archivos ----------
   let proyecto = await MC.archivos.inicial();
+  crearIndice(proyecto);
   const $nombre = $("nombre-archivo"), $chip = $("lenguaje-archivo");
   function pintarArchivo() {
     $nombre.textContent = actual ? MC.archivos.nombreDe(actual.ruta) : "Sin archivo";
@@ -150,20 +219,26 @@
     $chip.dataset.lenguaje = actual ? actual.lenguaje : "";
     $("b-nombre").setAttribute("aria-label", actual ? `Archivo abierto: ${actual.ruta} (${NOMBRES[actual.lenguaje]}). Toca para ver los archivos` : "Ningún archivo abierto. Toca para ver los archivos");
     document.title = actual ? `${MC.archivos.nombreDe(actual.ruta)} · Mobile Coder` : "Mobile Coder";
+    const ejecutable = !actual || EJECUTABLE[actual.lenguaje];
+    $ejecutar.classList.toggle("sin-motor", !ejecutable);
+    $ejecutar.dataset.tip = ejecutable ? "Ejecutar" : "Vista previa: pendiente";
     pintarEstadoMotor();
   }
   async function abrir(ruta) {
     const lenguaje = MC.archivos.lenguajeDe(ruta);
-    if (!lenguaje) throw Error("Esta versión abre archivos .py y .js.");
+    if (!lenguaje) throw Error("Esta versión abre archivos .py, .js, .html y .css.");
     const texto = await proyecto.leer(ruta);
     await guardar();
     if (motores.estado === "corriendo") motores.detener();
     actual = { proyecto, ruta, lenguaje, guardado: texto };
+    marcaEjecucion = marcaProblemas = null;
     editor.abrir({ id: proyecto.clave + ":" + ruta, lenguaje, texto });
     editor.refrescar();
     marcarGuardado("ok", "Guardado");
     escribir("ultimo-" + proyecto.clave, ruta);
+    if (indice) indice.poner(ruta, texto);
     pintarArchivo();
+    inteligencia.alAbrir();
     if (lenguaje === "python") setTimeout(() => motores.precargarPython(), 200);
   }
 
@@ -198,7 +273,7 @@
         + `<span class="entrada-nombre">${esc(e.nombre)}</span>`
         + (lenguaje ? `<span class="chip" data-lenguaje="${lenguaje}">${CHIP[lenguaje]}</span>` : e.tipo === "archivo" ? `<span class="entrada-nota">aún no se abre</span>` : "")
         + `</button></li>`;
-    }).join("") : `<li class="vacio">Carpeta vacía. Crea un archivo .py o .js.</li>`;
+    }).join("") : `<li class="vacio">Carpeta vacía. Crea un archivo .py, .js, .html o .css.</li>`;
   }
   function abrirPanel(si = true) {
     $panel.hidden = !si;
@@ -221,6 +296,7 @@
       const nuevo = await MC.archivos.elegirCarpeta();
       await guardar();
       proyecto = nuevo; dir = "";
+      crearIndice(proyecto);
       avisoPanel(`Carpeta elegida: ${proyecto.nombre}. Abre o crea un archivo.`);
       pintarPanel();
     } catch (e) {
@@ -251,20 +327,24 @@
   $("b-nuevo-archivo").addEventListener("click", async () => {
     const nombre = await pedirNombre({
       titulo: "Nuevo archivo", etiqueta: "Nombre", inicial: actual && actual.lenguaje === "js" ? "nuevo.js" : "nuevo.py",
-      nota: "Termina en .py (Python) o .js (JavaScript).",
-      validar: (n) => MC.archivos.motivoNombre(n) || (MC.archivos.lenguajeDe(n) ? null : "Termina en .py o .js."),
+      nota: "Termina en .py (Python), .js (JavaScript), .html (página) o .css (estilos).",
+      validar: (n) => MC.archivos.motivoNombre(n) || (MC.archivos.lenguajeDe(n) ? null : "Termina en .py, .js, .html o .css."),
     });
     if (!nombre) return;
     const ruta = MC.archivos.unir(dir, nombre);
-    try { await proyecto.crearArchivo(ruta, ""); await abrir(ruta); abrirPanel(false); }
+    const inicial = MC.archivos.lenguajeDe(nombre) === "html" ? PAGINA_NUEVA : "";
+    try { await proyecto.crearArchivo(ruta, inicial); if (indice) indice.poner(ruta, inicial); await abrir(ruta); abrirPanel(false); }
     catch (e) { avisoPanel("No se pudo crear: " + (e.message || e), true); }
   });
   $("b-nueva-carpeta").addEventListener("click", async () => {
     const nombre = await pedirNombre({ titulo: "Nueva carpeta", etiqueta: "Nombre", inicial: "carpeta", nota: "Dentro de la carpeta actual.", validar: MC.archivos.motivoNombre });
     if (!nombre) return;
-    try { await proyecto.crearCarpeta(MC.archivos.unir(dir, nombre)); pintarPanel(); }
+    try { const r = MC.archivos.unir(dir, nombre); await proyecto.crearCarpeta(r); if (indice) indice.ponerCarpeta(r); pintarPanel(); }
     catch (e) { avisoPanel("No se pudo crear: " + (e.message || e), true); }
   });
+
+  // Una página nueva ya enlaza su hoja de estilo y su script: los servicios avisan si faltan.
+  const PAGINA_NUEVA = '<!doctype html>\n<html lang="es">\n<head>\n  <meta charset="utf-8">\n  <meta name="viewport" content="width=device-width, initial-scale=1">\n  <title>Mi página</title>\n  <link rel="stylesheet" href="estilos.css">\n</head>\n<body>\n  <h1>Hola</h1>\n\n  <script src="main.js"></script>\n</body>\n</html>\n';
 
   // ---------- Menú ⋯ (placas metálicas) ----------
   const $menu = $("menu"), $bMenu = $("b-menu");
@@ -298,11 +378,16 @@
     const origen = await fetch("cmg/ORIGEN.json").then((r) => r.json()).catch(() => null);
     const py = await fetch("vendor/pyodide/MANIFEST.json").then((r) => r.json()).catch(() => null);
     const p = motores.python;
+    const [ts, web, jedi] = await Promise.all(["typescript", "servicios-web", "jedi"].map((d) => fetch(`vendor/${d}/MANIFEST.json`).then((r) => r.json()).catch(() => null)));
+    const e = inteligencia.estados, listo = (x) => (x && x.estado === "listo" ? ` · cargó en ${MC.motores.segundos(x.ms || 0)}` : x && x.estado === "fallo" ? " · no cargó" : x && x.estado === "cargando" ? " · cargando" : "");
     const filas = [
-      ["Versión", "0.1.0 · primera implementación"],
+      ["Versión", "0.2.0 · servicios de lenguaje"],
       ["Editor", origen ? `Code Battle Lite · ${origen.commit.slice(0, 7)}` : "—"],
       ["Python", py ? `${py.paquete} (Python ${py.python})${p.estado === "listo" ? ` · cargó en ${MC.motores.segundos(p.ms)}` : ""}` : "—"],
       ["JavaScript", "Motor del navegador en un Worker propio"],
+      ["Ayuda de JS", ts ? `${ts.paquete} (Apache-2.0)${listo(e.js)}` : "—"],
+      ["Ayuda de HTML y CSS", web ? `vscode-html-languageservice ${web.paquetes["vscode-html-languageservice"]} y vscode-css-languageservice ${web.paquetes["vscode-css-languageservice"]} (MIT)${listo(e.web)}` : "—"],
+      ["Ayuda de Python", jedi ? `Jedi 0.19.2 y parso 0.8.6 (MIT)${listo(e.python)}` : "—"],
       ["Archivos", TIPOS[proyecto.tipo] + (proyecto.tipo === "android" ? ` · ${proyecto.nombre}` : "")],
       ["Sin conexión", "Todo se sirve desde la propia app"],
     ];
@@ -319,6 +404,8 @@
     if (!$panel.hidden && actual) { abrirPanel(false); return true; }
     if (hoja.abierta) { hoja.cerrar(); return true; }
     if (editor.fachada.edicion && editor.fachada.edicion.activo) { editor.fachada.edicion.activar(false); return true; }
+    // Después de ir a otro archivo (una definición, un enlace, un error), Atrás vuelve al de antes.
+    if (inteligencia.volver()) return true;
     guardar();
     return false;
   };

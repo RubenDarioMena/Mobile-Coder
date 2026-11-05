@@ -1,6 +1,7 @@
 /* Motor de JavaScript (Worker de módulo). El archivo corre como módulo de ES, aislado de la interfaz:
  * sin DOM, con su propio estado en cada ejecución. console.* llega a la consola de la app.
- * Mensajes de salida: salida { clase, texto }, limpiar, error { nombre, mensaje, linea, pila }, evaluado y fin.
+ * Los import entre archivos del proyecto llegan resueltos (app/modulos.js): cada archivo es un módulo propio.
+ * Mensajes de salida: salida { clase, texto }, limpiar, error { nombre, mensaje, linea, destino, pila }, evaluado y fin.
  * «fin» llega cuando el módulo terminó y no quedan temporizadores; las promesas sin temporizador no se siguen. */
 const enviar = (m) => postMessage(m);
 let archivo = "main.js", evaluado = false, finEnviado = false;
@@ -77,20 +78,28 @@ Object.assign(console, {
 self.alert = (m) => console.log(String(m));
 
 // ---------- Errores: la línea del archivo, sin el ruido del motor ----------
-function lineaDe(pila) {
-  const reArchivo = new RegExp(archivo.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ":(\\d+):(\\d+)");
-  for (const linea of String(pila || "").split("\n")) {
-    const m = reArchivo.exec(linea) || /blob:[^\s)]*:(\d+):(\d+)/.exec(linea);
-    if (m) return Number(m[1]);
+// Cada archivo del proyecto es un blob; su nombre (sourceURL) o su blob dicen de qué archivo es cada marco.
+const deBlob = new Map();   // url del blob → ruta
+const RE_MARCO = /(blob:[^\s)]*?|[^\s()]+?):(\d+):(\d+)\)?\s*$/;
+function marcos(pila) {
+  const out = [];
+  for (const l of String(pila || "").split("\n")) {
+    if (!/^\s+at /.test(l)) continue;
+    const m = RE_MARCO.exec(l);
+    if (!m) continue;
+    const ruta = deBlob.get(m[1]) || (rutas.has(m[1]) ? m[1] : null);
+    if (ruta) out.push({ ruta, linea: Number(m[2]), texto: l.replace(m[1], ruta) });
   }
-  return null;
+  return out;
 }
+let rutas = new Set();
 function reportar(e, prefijo = "") {
   const esError = e instanceof Error || (e && typeof e === "object" && "message" in e && "name" in e);
   const nombre = esError ? e.name : "Error", mensaje = esError ? e.message : describir(e, 1);
-  const pila = esError && e.stack ? String(e.stack).split("\n").filter((l) => /^\s+at /.test(l) && (l.includes(archivo) || l.includes("blob:")))
-    .map((l) => l.replace(/blob:[^\s)]*?(:\d+:\d+)/g, archivo + "$1")) : [];
-  enviar({ tipo: "error", nombre, mensaje: prefijo + mensaje, linea: esError ? lineaDe(e.stack) : null, pila });
+  const ms = esError ? marcos(e.stack) : [];
+  // La línea que se marca es la del archivo abierto; el destino, el marco más profundo del proyecto.
+  const propio = ms.find((x) => x.ruta === archivo), destino = ms[0] ? { ruta: ms[0].ruta, linea: ms[0].linea } : null;
+  enviar({ tipo: "error", nombre, mensaje: prefijo + mensaje, linea: propio ? propio.linea : null, destino, pila: ms.map((x) => x.texto) });
 }
 self.addEventListener("error", (ev) => { ev.preventDefault(); reportar(ev.error || Error(ev.message)); revisar(); });
 self.addEventListener("unhandledrejection", (ev) => { ev.preventDefault(); reportar(ev.reason, "(promesa sin catch) "); revisar(); });
@@ -115,13 +124,21 @@ self.onmessage = async (ev) => {
   const m = ev.data;
   if (m.tipo !== "ejecutar") return;
   archivo = m.archivo || "main.js";
-  const url = URL.createObjectURL(new Blob([m.codigo + "\n//# sourceURL=" + archivo], { type: "text/javascript" }));
+  // m.modulos (app/modulos.js): cada archivo después de lo que importa. Sus import pasan a apuntar a los blobs.
+  const modulos = m.modulos || [{ ruta: archivo, texto: m.codigo, deps: [] }], urls = new Map();
+  rutas = new Set(modulos.map((x) => x.ruta));
+  for (const mod of modulos) {
+    let t = mod.texto;
+    for (const d of [...mod.deps].sort((x, y) => y.a - x.a)) t = t.slice(0, d.a) + JSON.stringify(urls.get(d.ruta)) + t.slice(d.b);
+    const url = URL.createObjectURL(new Blob([t + "\n//# sourceURL=" + mod.ruta], { type: "text/javascript" }));
+    urls.set(mod.ruta, url); deBlob.set(url, mod.ruta);
+  }
   try {
-    await import(url);
+    await import(urls.get(archivo));
   } catch (e) {
     reportar(e);
   } finally {
-    URL.revokeObjectURL(url);
+    for (const u of urls.values()) URL.revokeObjectURL(u);
     evaluado = true;
     enviar({ tipo: "evaluado" });
     revisar();

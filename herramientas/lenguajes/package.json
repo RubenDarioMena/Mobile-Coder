@@ -1,0 +1,14 @@
+{
+  "name": "mobile-coder-lenguajes",
+  "private": true,
+  "description": "Versiones fijadas de los servicios de lenguaje que herramientas/lenguajes.mjs copia y empaqueta en web/vendor/. No se sirve: solo es la fuente de la copia.",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "typescript": "6.0.3",
+    "vscode-html-languageservice": "5.6.2",
+    "vscode-css-languageservice": "6.3.10"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}

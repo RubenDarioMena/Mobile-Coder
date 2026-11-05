@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write   # para publicar el APK en la release «prueba»
 
 jobs:
   apk:
@@ -21,7 +21,7 @@ jobs:
         with:
           node-version: 22
 
-      # Las copias del editor y de Pyodide siguen idénticas a sus manifiestos, y los scripts de la app se analizan.
+      # Las copias del editor, de Pyodide y de los servicios de lenguaje siguen idénticas a sus manifiestos, y los scripts de la app se analizan.
       - name: Comprobar web/
         run: node herramientas/verificar.mjs
 
@@ -44,7 +44,9 @@ jobs:
           "$AAPT2" dump badging "$APK" | grep -E "^(package|sdkVersion|targetSdkVersion|uses-permission|application-label|launchable-activity)"
           for f in assets/index.html assets/app/motor-js.js assets/app/motor-python.js assets/cmg/ORIGEN.json \
                    assets/vendor/pyodide/pyodide.mjs assets/vendor/pyodide/pyodide.asm.mjs assets/vendor/pyodide/pyodide.asm.wasm \
-                   assets/vendor/pyodide/python_stdlib.zip; do
+                   assets/vendor/pyodide/python_stdlib.zip assets/app/lenguaje-web.js assets/app/lenguaje-python.js \
+                   assets/vendor/typescript/typescript.js assets/vendor/typescript/lib/lib.dom.d.ts \
+                   assets/vendor/servicios-web/servicios-web.js assets/vendor/jedi/jedi-0.19.2-py2.py3-none-any.whl; do
             unzip -l "$APK" "$f" | grep -q "$f" && echo "ok  $f" || { echo "FALTA $f"; exit 1; }
           done
 
@@ -54,3 +56,19 @@ jobs:
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 30
+
+      # Enlace fijo para el teléfono, sin zip ni sesión de GitHub (si el repositorio es público):
+      # https://github.com/<repo>/releases/download/prueba/mobile-coder.apk. Cada push a main lo reemplaza.
+      - name: Publicar en la release «prueba»
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp app/build/outputs/apk/debug/app-debug.apk mobile-coder.apk
+          NOTAS="APK de prueba (depuración) de ${GITHUB_SHA::7}. Se reemplaza en cada push a main."
+          if gh release view prueba >/dev/null 2>&1; then
+            gh release upload prueba mobile-coder.apk --clobber
+            gh release edit prueba --notes "$NOTAS" --target "$GITHUB_SHA"
+          else
+            gh release create prueba mobile-coder.apk --prerelease --title "APK de prueba" --notes "$NOTAS" --target "$GITHUB_SHA"
+          fi

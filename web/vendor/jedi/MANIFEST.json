@@ -1,0 +1,20 @@
+{
+  "nota": "Ruedas de Jedi y parso de PyPI sin modificar. El Worker de Python las descomprime en Pyodide. Se regenera con herramientas/lenguajes.mjs.",
+  "ruedas": [
+    {
+      "archivo": "jedi-0.19.2-py2.py3-none-any.whl",
+      "url": "https://files.pythonhosted.org/packages/c0/5a/9cac0c82afec3d09ccd97c8b6502d48f165f9124db81b4bcb90b4af974ee/jedi-0.19.2-py2.py3-none-any.whl"
+    },
+    {
+      "archivo": "parso-0.8.6-py2.py3-none-any.whl",
+      "url": "https://files.pythonhosted.org/packages/b6/61/fae042894f4296ec49e3f193aff5d7c18440da9e48102c3315e1bc4519a7/parso-0.8.6-py2.py3-none-any.whl"
+    }
+  ],
+  "licencia": "Jedi: MIT (incluye typeshed, Apache-2.0, dentro de la rueda). parso: MIT y PSF para sus gramáticas (dentro de la rueda).",
+  "archivos": {
+    "jedi-0.19.2-py2.py3-none-any.whl": "a8ef22bde8490f57fe5c7681a3c83cb58874daf72b4784de3cce5b6ef6edb5b9",
+    "LICENSE-jedi": "78e60cd0b8f28694f30195482c33d76908d846b0d15278deb7332aa22ba8e412",
+    "parso-0.8.6-py2.py3-none-any.whl": "2c549f800b70a5c4952197248825584cb00f033b29c692671d3bf08bf380baff",
+    "LICENSE-parso": "fa67973073753d17624caf8684d5ee816d70c89d912c5bca7ca0f08e7b150edb"
+  }
+}

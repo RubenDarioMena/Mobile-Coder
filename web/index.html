@@ -9,7 +9,7 @@
   <!-- Interfaz del editor compartida con Code Battle Lite (copia sin editar: web/cmg/ORIGEN.json). -->
   <link rel="stylesheet" href="cmg/shared/editor/tema.css?v=1"><link rel="stylesheet" href="cmg/shared/editor/editor.css?v=1">
   <link rel="stylesheet" href="cmg/shared/css/edicion.css?v=7"><link rel="stylesheet" href="cmg/shared/editor/autonomo.css?v=3">
-  <link rel="stylesheet" href="app/app.css?v=1">
+  <link rel="stylesheet" href="app/app.css?v=2">
 </head>
 <body>
   <div class="ide" id="ide">
@@ -30,15 +30,19 @@
   <!-- Hoja inferior: consola. Pestaña con una flecha en la esquina inferior derecha del código; app/hoja.js la monta dentro del editor. -->
   <template id="plantilla-hoja">
     <button class="hoja-abrir" type="button" aria-controls="hoja" aria-expanded="false" aria-label="Abrir la consola" data-tip="Consola"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg></button>
-    <section class="hoja" id="hoja" role="dialog" aria-label="Consola" hidden>
+    <section class="hoja" id="hoja" role="dialog" aria-label="Consola y problemas" hidden>
       <div class="hoja-asa" role="separator" tabindex="0" aria-orientation="horizontal" aria-controls="hoja" aria-label="Alto de la consola: arrastra o usa las flechas; hasta abajo la cierra"><span></span></div>
       <div class="hoja-cab">
-        <h2 class="hoja-titulo">Consola</h2>
+        <div class="hoja-pestanas" role="tablist" aria-label="Contenido de la hoja">
+          <button class="hoja-pestana" id="tab-consola" type="button" role="tab" aria-selected="true" aria-controls="consola">Consola</button>
+          <button class="hoja-pestana" id="tab-problemas" type="button" role="tab" aria-selected="false" aria-controls="problemas">Problemas<span class="cuenta" id="cuenta-problemas"></span></button>
+        </div>
         <span class="motor-estado" id="motor-estado" aria-live="polite"></span>
         <button class="mini" id="b-limpiar" type="button" aria-label="Limpiar la consola" data-tip="Limpiar"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7h14M10 7V4.8h4V7M7 7l.8 12.2h8.4L17 7M10.2 10.5v5.5M13.8 10.5v5.5"/></svg></button>
         <button class="mini" id="b-cerrar-hoja" type="button" aria-label="Cerrar la consola" data-tip="Cerrar"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
       </div>
       <div class="consola" id="consola" role="log" aria-label="Salida del programa" tabindex="0"></div>
+      <div class="problemas" id="problemas" role="tabpanel" aria-labelledby="tab-problemas" hidden></div>
     </section>
   </template>
 
@@ -90,8 +94,10 @@
   <script src="cmg/shared/editor/vida.js?v=1"></script><script src="cmg/shared/editor/tips.js?v=1"></script>
   <script src="cmg/shared/editor/edicion.js?v=5"></script>
   <script src="cmg/shared/editor/nucleo-ui.js?v=4"></script><script src="cmg/shared/editor/editor.js?v=4"></script>
-  <script src="app/puente.js?v=1"></script><script src="app/archivos.js?v=1"></script>
-  <script src="app/consola.js?v=1"></script><script src="app/motores.js?v=1"></script>
-  <script src="app/hoja.js?v=1"></script><script src="app/app.js?v=1"></script>
+  <script src="app/editor-web.js?v=1"></script>
+  <script src="app/puente.js?v=1"></script><script src="app/archivos.js?v=2"></script><script src="app/proyecto.js?v=1"></script>
+  <script src="app/consola.js?v=2"></script><script src="app/modulos.js?v=1"></script><script src="app/motores.js?v=2"></script>
+  <script src="app/inteligencia.js?v=1"></script>
+  <script src="app/hoja.js?v=1"></script><script src="app/app.js?v=2"></script>
 </body>
 </html>

@@ -48,7 +48,8 @@
           marcar(e);
         });
       },
-      // Nota de la app: "inicio", "ok", "fallo" o "detenido". Con linea, tocarla lleva a esa línea del código.
+      // Nota de la app: "inicio", "ok", "fallo" o "detenido". Con linea (un número del archivo abierto, o
+      // { ruta, linea } de otro archivo del proyecto), tocarla lleva ahí.
       nota(clase, texto, linea = null) {
         const e = nueva(clase, { abierta: false, linea });
         e.texto = texto; marcar(e);

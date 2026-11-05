@@ -8,7 +8,8 @@ Antes de cambiar nada, lee `README.md`, `docs/UI-MOVIL.md`, `docs/ARQUITECTURA.m
 - **Interfaz compartida, motor propio.** `web/cmg/` es una copia sin editar de la interfaz del editor de Code Battle Lite. No se toca aquí: se cambia allí y se copia con `herramientas/sincronizar-editor.mjs`. La ejecución (`web/app/motor-*.js`) es propia; no dependas del runtime del juego.
 - **De Code Battle Lite solo viene la interfaz.** Cuando portes algo de ese repositorio a `web/app/`, indica el archivo y el commit de origen en el código y en `PROGRESO.md`. No traigas nada propio del juego (mapa, robots, retos, simulación, runtime).
 - **La interfaz acordada manda.** `docs/UI-MOVIL.md` recoge decisiones del usuario. Si una implementación se aparta de ella, dilo y regístralo.
-- **Sin framework ni compilación en la web.** JavaScript y CSS sin empaquetador; no añadas dependencias por rutina. Ajusta el `?v=` de `web/index.html` cuando cambies un recurso.
+- **Sin framework ni compilación en la web.** JavaScript y CSS sin empaquetador; no añadas dependencias por rutina. La única excepción es código de terceros: los servicios de HTML/CSS se empaquetan sin cambios con `herramientas/lenguajes.mjs`.
+- **Copias de terceros** (`web/vendor/`): no se editan a mano. Se regeneran con `herramientas/pyodide.mjs` y `herramientas/lenguajes.mjs` (versiones en `herramientas/lenguajes/package.json` + `package-lock.json`). Ajusta el `?v=` de `web/index.html` cuando cambies un recurso.
 - **Cambios pequeños.** El usuario hace QA a mano en su teléfono con frecuencia.
 - **Verificación honesta.** Distingue lo probado en un teléfono real de lo emulado en Chromium, y lo comprobado ahora de lo comprobado antes.
 - **Idioma:** documentación y textos de la interfaz en español.
@@ -24,7 +25,7 @@ node pruebas/ui.mjs python        # solo las pruebas cuyo nombre contiene «pyth
 node herramientas/servir.mjs      # la app en http://localhost:8781/ para mirarla a mano
 ```
 
-- El APK lo compila GitHub Actions (`.github/workflows/apk.yml`) en cada push a `main`.
+- El APK lo compila GitHub Actions (`.github/workflows/apk.yml`) en cada push a `main` y lo publica en la release «prueba» (enlace fijo en el README).
 - Localmente: `./gradlew assembleDebug`, con el SDK de Android y JDK 17.
 - En entornos sin acceso a `dl.google.com` (SDK y Google Maven), el APK solo se puede compilar en CI.
 - Cambios en Kotlin: comprueba que la ejecución de Actions termine en verde.

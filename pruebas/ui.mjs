@@ -314,7 +314,7 @@ await prueba("archivos: carpetas, ruta y nombres no válidos", async () => {
   await p.click('.entrada[data-ruta="ejemplos"]');
   comprobar(await visible(p, "#ruta") && (await p.textContent("#ruta")).includes("ejemplos"), "sin ruta dentro de la carpeta");
   await p.click("#b-nuevo-archivo");
-  for (const [nombre, motivo] of [["mal/nombre.py", "Sin /"], ["sin-extension", ".py o .js"]]) {
+  for (const [nombre, motivo] of [["mal/nombre.py", "Sin /"], ["sin-extension", ".html o .css"]]) {
     await p.fill("#dialogo-nombre-campo", nombre);
     await p.click('#dialogo-nombre button[value="aceptar"]');
     comprobar(await p.evaluate(() => document.querySelector("#dialogo-nombre").open), `aceptó «${nombre}»`);
@@ -381,9 +381,153 @@ await prueba("puente: sin carpeta usa borradores; elegir carpeta y cancelar", as
   }
 });
 
-await prueba("sin conexión: ninguna petición fuera de la app y Python servido localmente", async () => {
+// ---------- Servicios de lenguaje y archivos que se conocen entre ellos ----------
+// Un proyecto de prueba del navegador con estos archivos, abierto en `ultimo`.
+async function conProyecto(archivos, ultimo, carpetas = []) {
+  const t = await telefono();
+  await t.ctx.addInitScript(([a, u, c]) => {
+    if (sessionStorage.getItem("sembrado")) return;
+    sessionStorage.setItem("sembrado", "1");
+    localStorage.setItem("mc-proyecto-navegador", JSON.stringify({ archivos: a, carpetas: c }));
+    localStorage.setItem("mc-ultimo-navegador", JSON.stringify(u));
+  }, [archivos, ultimo, carpetas]);
+  await abrirApp(t.p);
+  return t;
+}
+// Pone el cursor al final de la línea n (o en la columna col), con el foco en el código (teclado abierto).
+const cursorEn = (p, n, col = null) => p.evaluate(([n, col]) => {
+  const c = MC.editor.codigo, ls = c.value.split("\n"), pos = ls.slice(0, n - 1).reduce((s, l) => s + l.length + 1, 0) + (col ?? ls[n - 1].length);
+  c.focus(); c.setSelectionRange(pos, pos);
+}, [n, col]);
+const sugerencias = (p) => p.evaluate(() => { const l = document.querySelector(".mc-completar"); return l.hidden ? [] : [...l.querySelectorAll(".sug code")].map((c) => c.textContent); });
+const esperarSugerencia = (p, texto, timeout = 20000) => p.waitForFunction((t) => [...document.querySelectorAll(".mc-completar:not([hidden]) .sug code")].some((c) => c.textContent === t), texto, { timeout });
+const placaIr = (p) => p.evaluate(() => { const l = document.querySelector(".mc-ir"); return l.hidden ? "" : l.textContent; });
+const PROYECTO_WEB = {
+  "main.js": 'import { saludar, VALOR } from "./lib/util.js";\nconsole.log(saludar("Ada"), VALOR);\n',
+  "lib/util.js": 'export function saludar(nombre) {\n  return "Hola, " + nombre;\n}\nexport const VALOR = 42;\n',
+  "index.html": '<!doctype html>\n<html lang="es">\n<head>\n  <link rel="stylesheet" href="estilos.css">\n  <link rel="stylesheet" href="falta.css">\n</head>\n<body>\n  <div class="tarjeta"></div>\n  <script src="main.js"></script>\n</body>\n</html>\n',
+  "estilos.css": '.boton {\n  color: red;\n}\n',
+};
+
+await prueba("servicios js: completa lo que exporta otro archivo y lleva a su definición", async () => {
+  const { ctx, p } = await conProyecto(PROYECTO_WEB, "main.js", ["lib"]);
+  await cursorEn(p, 2);
+  await p.keyboard.type("\nsal");
+  await esperarSugerencia(p, "saludar");
+  await p.click('.mc-completar .sug:has(code:text-is("saludar"))');
+  await p.keyboard.type('("x").toUp');
+  await esperarSugerencia(p, "toUpperCase");
+  await p.keyboard.press("Tab");
+  comprobar((await p.evaluate(() => MC.editor.codigo.value)).includes('saludar("x").toUpperCase'), "no puso las sugerencias");
+  // Cursor quieto sobre el nombre importado: la placa lleva a lib/util.js.
+  await cursorEn(p, 1, 12);
+  await p.waitForFunction(() => !document.querySelector(".mc-ir").hidden, null, { timeout: 15000 });
+  comprobar(/saludar.*util\.js:1/.test(await placaIr(p)), "placa: " + await placaIr(p));
+  await p.click(".mc-ir .sug");
+  await p.waitForFunction(() => document.querySelector("#nombre-archivo").textContent === "util.js");
+  comprobar(await p.evaluate(() => MC.atras()) === true, "Atrás no volvió");
+  await p.waitForFunction(() => document.querySelector("#nombre-archivo").textContent === "main.js");
+  await ctx.close();
+});
+
+await prueba("servicios js: problemas entre archivos en su pestaña, con la línea marcada", async () => {
+  const { ctx, p } = await conProyecto(PROYECTO_WEB, "main.js", ["lib"]);
+  await escribirCodigo(p, 'import { saluda } from "./lib/util.js";\nimport { x } from "./nada.js";\nconsole.log(nombre);\n');
+  await p.waitForFunction(() => /nada\.js/.test(document.querySelector("#problemas").textContent) && /saluda/.test(document.querySelector("#problemas").textContent), null, { timeout: 20000 });
+  const texto = await p.textContent("#problemas");
+  comprobar(/No se encuentra el nombre ["']nombre["']/.test(texto), "mensajes en español: " + texto);
+  comprobar(await p.locator('.problema[data-ruta="main.js"]').count() === 3, "problemas de main.js: " + texto);
+  comprobar(Number(await p.textContent("#cuenta-problemas")) >= 3, "cuenta: " + await p.textContent("#cuenta-problemas"));
+  await p.waitForFunction(() => document.querySelector(".gutter-in div.err"), null, { timeout: 8000 });
+  comprobar((await lineaErr(p)).join() === "1", "línea marcada: " + (await lineaErr(p)).join());
+  // Tocar un problema lleva a su línea; la pestaña se elige en la hoja.
+  await p.click(".hoja-abrir"); await p.click("#tab-problemas");
+  comprobar(await visible(p, "#problemas") && !(await visible(p, "#consola")), "la pestaña Problemas no se ve");
+  await p.click('.problema[data-linea="3"]');
+  comprobar(await p.evaluate(() => MC.editor.codigo.value.slice(MC.editor.codigo.selectionStart, MC.editor.codigo.selectionEnd)) === "console.log(nombre);", "no fue a la línea 3");
+  await ctx.close();
+});
+
+await prueba("servicios html: clases de su hoja de estilo, enlace roto y abrir el CSS", async () => {
+  const { ctx, p } = await conProyecto(PROYECTO_WEB, "index.html", ["lib"]);
+  comprobar(await p.textContent("#lenguaje-archivo") === "HTML", "falta la marca HTML");
+  await p.waitForFunction(() => /falta\.css/.test(document.querySelector("#problemas").textContent), null, { timeout: 15000 });
+  await cursorEn(p, 8, 21);   // dentro de class="tarjeta", tras «tarjeta»
+  await p.keyboard.type(" b");
+  await esperarSugerencia(p, "boton");
+  await p.keyboard.press("Tab");
+  comprobar((await p.evaluate(() => MC.editor.codigo.value)).includes('class="tarjeta boton"'), "no puso la clase");
+  await cursorEn(p, 9); await p.keyboard.type("\n  <sp");
+  await esperarSugerencia(p, "span");
+  await p.keyboard.press("Escape");
+  await cursorEn(p, 4, 35);   // en href="estilos.css"
+  await p.waitForFunction(() => /Abrir estilos\.css/.test(document.querySelector(".mc-ir").textContent), null, { timeout: 15000 });
+  await p.click(".mc-ir .sug");
+  await p.waitForFunction(() => document.querySelector("#nombre-archivo").textContent === "estilos.css");
+  comprobar(await p.textContent("#lenguaje-archivo") === "CSS", "falta la marca CSS");
+  // ▶ en HTML o CSS explica que la vista previa está pendiente.
+  await p.click("#b-ejecutar");
+  await p.waitForFunction(() => /vista previa de HTML y CSS/.test(document.querySelector("#consola").textContent), null, { timeout: 3000 });
+  await ctx.close();
+});
+
+await prueba("servicios css: sugiere las clases que usan las páginas que la enlazan", async () => {
+  const { ctx, p } = await conProyecto(PROYECTO_WEB, "estilos.css", ["lib"]);
+  await cursorEn(p, 3); await p.keyboard.type("\n.");
+  await esperarSugerencia(p, ".tarjeta");
+  await p.keyboard.type("tar"); await p.keyboard.press("Tab");
+  await p.keyboard.type(" {\n  col");
+  await esperarSugerencia(p, "color");
+  comprobar((await p.evaluate(() => MC.editor.codigo.value)).includes(".tarjeta {"), "no puso la clase de la página: " + JSON.stringify(await p.evaluate(() => MC.editor.codigo.value)));
+  await ctx.close();
+});
+
+await prueba("javascript: import entre archivos al ejecutar; el error de otro archivo lleva a él", async () => {
+  const { ctx, p } = await conProyecto({ ...PROYECTO_WEB, "lib/util.js": PROYECTO_WEB["lib/util.js"] + 'export function falla() {\n  null.x;\n}\n' }, "main.js", ["lib"]);
+  let salida = await ejecutar(p);
+  comprobar(/Hola, Ada 42/.test(salida) && /✓ Terminado/.test(salida), "salida: " + salida);
+  await escribirCodigo(p, 'import { falla } from "./lib/util.js";\nfalla();\n');
+  salida = await ejecutar(p);
+  comprobar(/✗ TypeError en lib\/util\.js:6/.test(salida), "salida: " + salida);
+  comprobar((await lineaErr(p)).join() === "2", "línea marcada: " + (await lineaErr(p)).join());
+  comprobar(/at falla \(lib\/util\.js:6:\d+\)/.test(salida), "pila sin el archivo: " + salida);
+  await p.click('#consola .c-fallo.con-linea');
+  await p.waitForFunction(() => document.querySelector("#nombre-archivo").textContent === "util.js");
+  // Atrás: primero cierra la hoja; después vuelve a main.js.
+  comprobar(await p.evaluate(() => MC.atras()) && !(await visible(p, "#hoja")), "Atrás no cerró la hoja");
+  comprobar(await p.evaluate(() => MC.atras()), "Atrás no volvió");
+  await p.waitForFunction(() => document.querySelector("#nombre-archivo").textContent === "main.js");
+  await escribirCodigo(p, 'import _ from "lodash";\n');
+  salida = await ejecutar(p);
+  comprobar(/paquete de npm/.test(salida) && !/Terminado/.test(salida), "paquete: " + salida);
+  await escribirCodigo(p, 'import { x } from "./nada.js";\n');
+  salida = await ejecutar(p);
+  comprobar(/No se encuentra «\.\/nada\.js»/.test(salida), "falta: " + salida);
+  await ctx.close();
+});
+
+await prueba("python: Jedi completa un módulo del proyecto; import y datos al ejecutar", async () => {
+  const { ctx, p } = await conProyecto({
+    "main.py": 'import util\nprint(util.doble(4))\nwith open("datos.txt") as f:\n    print(f.read().strip())\n',
+    "util.py": 'def doble(x):\n    return 2 * x\n\ndef falla():\n    return 1 / 0\n',
+    "datos.txt": "desde el archivo\n",
+  }, "main.py");
+  let salida = await ejecutar(p, { timeout: 60000 });
+  comprobar(/\n8\n/.test(salida) && /desde el archivo/.test(salida), "salida: " + salida);
+  await cursorEn(p, 4); await p.keyboard.type("\nutil.do");
+  await esperarSugerencia(p, "doble", 60000);
+  await p.keyboard.press("Escape");
+  await escribirCodigo(p, 'import util\nutil.falla()\nimport nada_de_nada\n');
+  await p.waitForFunction(() => /nada_de_nada/.test(document.querySelector("#problemas").textContent), null, { timeout: 30000 });
+  salida = await ejecutar(p, { timeout: 30000 });
+  comprobar(/✗ ZeroDivisionError en util\.py:5/.test(salida) && /File "util\.py", line 5/.test(salida), "salida: " + salida);
+  await ctx.close();
+});
+
+await prueba("sin conexión: ninguna petición fuera de la app; Python y los servicios de lenguaje, servidos localmente", async () => {
   comprobar(externas.length === 0, "peticiones externas: " + externas.join(", "));
-  for (const f of ["/vendor/pyodide/pyodide.asm.wasm", "/vendor/pyodide/python_stdlib.zip", "/app/motor-js.js"]) comprobar(locales.has(f), "no se vio " + f);
+  for (const f of ["/vendor/pyodide/pyodide.asm.wasm", "/vendor/pyodide/python_stdlib.zip", "/app/motor-js.js", "/vendor/typescript/typescript.js",
+    "/vendor/typescript/lib/lib.dom.d.ts", "/vendor/servicios-web/servicios-web.js", "/vendor/jedi/jedi-0.19.2-py2.py3-none-any.whl"]) comprobar(locales.has(f), "no se vio " + f);
   comprobar(erroresPagina.length === 0, "errores de la página: " + erroresPagina.join(" | "));
 });
 

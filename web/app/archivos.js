@@ -3,11 +3,11 @@
  * - borradores (Android sin carpeta) y navegador (pruebas en un navegador): un proyecto guardado en
  *   localStorage, con dos ejemplos. No son una carpeta del teléfono.
  * Las rutas son relativas a la carpeta del proyecto, con «/», sin «..» ni partes vacías.
- * Esta versión abre .py y .js; el resto se lista pero no se abre. */
+ * Se abren .py, .js (y .mjs), .html y .css; el resto se lista pero no se abre. */
 (() => {
   "use strict";
   const MC = (window.MC = window.MC || {});
-  const LENGUAJES = { py: "python", js: "js" };
+  const LENGUAJES = { py: "python", js: "js", mjs: "js", html: "html", htm: "html", css: "css" };
   const lenguajeDe = (nombre) => { const m = /\.([^./]+)$/.exec(nombre || ""); return (m && LENGUAJES[m[1].toLowerCase()]) || null; };
   const unir = (dir, nombre) => (dir ? dir + "/" + nombre : nombre);
   const padreDe = (ruta) => (ruta.includes("/") ? ruta.slice(0, ruta.lastIndexOf("/")) : "");
