@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Los mismos que web/cmg/shared/editor/tema.css: --bg y --surface. -->
+    <!-- Los mismos que web/cmg/shared/editor/tema.css: el fondo y la superficie. -->
     <color name="fondo">#0B0F13</color>
     <color name="icono_fondo">#131A20</color>
 </resources>
