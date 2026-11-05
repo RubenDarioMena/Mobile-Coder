@@ -1,0 +1,75 @@
+/* Distribución del componente fuera del juego; las piezas usan editor.css y edicion.css.
+ * Las reglas por forma (paleta compacta, barra de edición, seudocódigo) son las de edicion.css,
+ * comunes con el juego: aquí solo está lo que en el juego pone su propia interfaz. */
+.cmg-editor[data-autonomo] {
+  --code-size: 14px; --alto-editor: clamp(240px, 52dvh, 560px);
+  display: flex; flex-direction: column; gap: 8px; min-width: 0; position: relative; color: var(--ink); font-family: var(--f-body);
+}
+.cmg-editor[data-autonomo][data-forma="movil"] { --code-size: 13px; gap: 6px; }
+.cmg-editor[data-autonomo] *, .cmg-editor[data-autonomo] *::before, .cmg-editor[data-autonomo] *::after { box-sizing: border-box; }
+.cmg-editor [hidden] { display: none !important; }
+.cmg-editor[data-autonomo] .editor, .cmg-editor[data-autonomo] .prog { flex: none; height: var(--alto-editor); min-height: 0; }
+.cmg-editor[data-autonomo] .prog { overflow: auto; }
+
+/* Herramientas: los mismos botones pequeños que el juego. */
+.cmg-editor[data-autonomo] .editor-herramientas { display: flex; gap: 4px; align-items: center; flex: none; min-width: 0; }
+.cmg-editor[data-autonomo] .modos-codigo { display: inline-flex; gap: 4px; }
+.cmg-editor[data-autonomo] .mini {
+  display: inline-grid; place-items: center; border: 1px solid var(--line); background: var(--surface-2); border-radius: 6px; padding: 3px 8px;
+  min-width: 34px; min-height: 32px; cursor: pointer; font: 650 12.5px var(--f-body); color: var(--muted);
+}
+.cmg-editor[data-autonomo] .mini:hover { color: var(--ink); }
+.cmg-editor[data-autonomo] .mini[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+.cmg-editor[data-autonomo] .mini svg { width: 18px; height: 18px; }
+/* Lenguaje del documento: <select> nativo (D7), con el aspecto de los botones pequeños.
+   Con un solo lenguaje queda como indicación, sin flecha. */
+.cmg-editor[data-autonomo] select.lenguaje {
+  display: inline-block; appearance: none; -webkit-appearance: none; max-width: 9.5em; min-width: 0; padding: 3px 24px 3px 9px;
+  color: var(--ink); text-overflow: ellipsis;
+  background: linear-gradient(45deg, transparent 50%, currentColor 50%) no-repeat right 12px center / 5px 5px,
+              linear-gradient(-45deg, transparent 50%, currentColor 50%) no-repeat right 7px center / 5px 5px, var(--surface-2);
+}
+.cmg-editor[data-autonomo] select.lenguaje:disabled { cursor: default; padding-right: 9px; background: var(--surface-2); opacity: 1; }
+.cmg-editor[data-autonomo] .b-pantalla { margin-left: auto; }
+.cmg-editor[data-autonomo] .b-pantalla[aria-pressed="true"] { color: var(--ink); background: var(--surface); border-color: var(--edge); box-shadow: 0 0 0 1px var(--accent) inset; }
+.cmg-editor[data-autonomo][data-forma="movil"] .mini { min-height: 30px; min-width: 32px; padding: 2px 6px; }
+.cmg-editor[data-autonomo][data-forma="movil"] .modos-codigo .mini { min-width: 0; }
+.cmg-editor[data-autonomo][data-forma="movil"] select.lenguaje { max-width: 7.5em; }
+/* En el teléfono el interruptor del teclado vive en la barra de edición, como en el juego. */
+.cmg-editor[data-autonomo][data-forma="movil"] .editor-herramientas .b-teclado { display: none; }
+.cmg-editor[data-autonomo] button:focus-visible, .cmg-editor[data-autonomo] select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Barra de símbolos: en PC no hace falta; en el teléfono aparece mientras se escribe. */
+.cmg-editor[data-autonomo] .simbolos { display: none; gap: 4px; overflow-x: auto; padding-bottom: 2px; flex: none; scrollbar-width: none; }
+.cmg-editor[data-autonomo] .simbolos::-webkit-scrollbar { display: none; }
+.cmg-editor[data-autonomo][data-forma="movil"][data-escribiendo="true"]:not([data-modo="pseudo"]) .simbolos { display: flex; }
+.cmg-editor[data-autonomo] .simbolos button {
+  flex: none; min-width: 38px; height: 36px; padding: 0 9px; font: 15px var(--f-code); color: var(--ink);
+  border: 1px solid var(--line); border-radius: 7px; background: var(--surface-2); cursor: pointer;
+}
+.cmg-editor[data-autonomo] .simbolos button:active { background: var(--accent); color: var(--accent-ink); }
+.cmg-editor[data-autonomo] .simbolos .sep-pal { flex: none; width: 2px; height: 24px; align-self: center; background: var(--metal-negro); }
+.cmg-editor[data-autonomo] .paleta-seudo { min-height: 58px; }
+.cmg-editor[data-autonomo] .resaltado, .cmg-editor[data-autonomo] textarea { margin: 0; }
+
+/* Diálogos: ajustes del editor y orden de la barra. */
+.cmg-editor[data-autonomo] dialog { max-width: min(600px, 95vw); color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+.cmg-editor[data-autonomo] dialog::backdrop { background: rgba(0, 0, 0, .55); }
+.cmg-editor[data-autonomo] dialog button, .cmg-editor[data-autonomo] dialog select { font: inherit; color: inherit; border: 1px solid var(--line); border-radius: 6px; background: var(--surface-2); padding: 6px 9px; cursor: pointer; }
+.cmg-editor[data-autonomo] .ajustes-editor { min-width: min(320px, 92vw); }
+.cmg-editor[data-autonomo] .ajustes-editor[open] { display: grid; gap: 12px; }
+.cmg-editor[data-autonomo] .ajustes-editor h2 { margin: 0; font-size: 16px; }
+.cmg-editor[data-autonomo] .ajustes-editor label { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 13px; color: var(--muted); }
+
+/* ---------- Pantalla completa ----------
+   El editor cubre la ventana visible (por encima de la página y por debajo de tooltips, menús y hojas,
+   que empiezan en z-index 81). Con el teclado del teléfono abierto se ajusta al viewport visual. */
+:root[data-cmg-pantalla], :root[data-cmg-pantalla] body { overflow: hidden; }
+.cmg-editor[data-autonomo][data-pantalla-completa="true"] {
+  position: fixed; z-index: 70; left: 0; right: 0; top: var(--arriba-visible, 0px); height: var(--alto-visible, 100dvh);
+  margin: 0; background: var(--bg); overscroll-behavior: contain;
+  padding: max(10px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px)) max(10px, env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
+}
+.cmg-editor[data-autonomo][data-forma="movil"][data-pantalla-completa="true"] { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-inset-right, 0px)) max(6px, env(safe-area-inset-bottom, 0px)) max(6px, env(safe-area-inset-left, 0px)); }
+.cmg-editor[data-autonomo][data-pantalla-completa="true"] .editor,
+.cmg-editor[data-autonomo][data-pantalla-completa="true"] .prog { flex: 1 1 auto; height: auto; }

@@ -1,0 +1,152 @@
+/* ---------- Paleta de iconos grabados ---------- */
+.paleta {
+  display: flex; gap: 6px; overflow-x: auto; padding: 6px; flex: none; border-radius: 8px; scrollbar-width: none;
+  background: repeating-linear-gradient(90deg, rgba(255, 255, 255, .03) 0 1px, transparent 1px 3px), linear-gradient(180deg, #3A434B, #262E35);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12), inset 0 -1px 0 rgba(0, 0, 0, .5), 0 0 0 1px var(--metal-negro);
+}
+.paleta::-webkit-scrollbar { display: none; }
+.atajo {
+  --t1: var(--grabado); --t2: var(--grabado); --t3: var(--grabado);
+  position: relative; flex: 0 0 auto; width: 46px; height: 46px; padding: 0; display: grid; place-items: center; cursor: pointer; border: 0; border-radius: 7px;
+  background: repeating-linear-gradient(90deg, rgba(255, 255, 255, .05) 0 1px, transparent 1px 3px), linear-gradient(180deg, var(--placa-1), var(--placa-2));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .32), inset 0 -1px 0 rgba(0, 0, 0, .45), 0 0 0 1px var(--metal-negro), 0 2px 3px rgba(0, 0, 0, .45);
+  transition: background .12s, box-shadow .12s, transform .08s;
+}
+.atajo svg { width: 30px; height: 30px; overflow: visible; filter: drop-shadow(0 1px 0 var(--grabado-luz)) drop-shadow(0 -.6px 0 rgba(0, 0, 0, .55)); transition: filter .12s; }
+.atajo:hover, .atajo:focus-visible, .atajo.vivo {
+  --t1: var(--c1); --t2: var(--c2, var(--c1)); --t3: var(--c3, var(--c2, var(--c1)));
+  background: radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--c1) 22%, transparent), transparent 70%), linear-gradient(180deg, var(--placa-viva-1), var(--placa-viva-2));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .1), 0 0 0 1px var(--c1), 0 0 14px color-mix(in srgb, var(--c1) 45%, transparent);
+}
+.atajo:hover svg, .atajo:focus-visible svg, .atajo.vivo svg { filter: drop-shadow(0 0 4px color-mix(in srgb, var(--c1) 60%, transparent)); }
+.atajo:active { transform: translateY(1px); }
+.atajo .t1 { fill: var(--t1); } .atajo .t2 { fill: var(--t2); } .atajo .t3 { fill: var(--t3); }
+.atajo .s1 { fill: none; stroke: var(--t1); } .atajo .s2 { fill: none; stroke: var(--t2); } .atajo .s3 { fill: none; stroke: var(--t3); }
+.atajo .letra { font-family: var(--f-code); font-weight: 700; }
+.paleta .sep-pal { flex: none; width: 2px; margin: 4px 2px; border-radius: 1px; background: var(--metal-negro); box-shadow: 1px 0 0 rgba(255, 255, 255, .1); }
+/* Tooltip rápido */
+.tip {
+  position: fixed; z-index: 81; left: 0; top: 0; pointer-events: none; max-width: 260px;
+  padding: 5px 9px 6px; border-radius: 6px; background: #05080A; color: var(--ink); border: 1px solid var(--metal);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .5); display: grid; gap: 1px; animation: tip .08s ease-out;
+}
+.tip b { font-family: var(--f-display); font-stretch: 118%; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; font-weight: 750; }
+.tip code { font-family: var(--f-code); font-size: 11.5px; color: var(--muted); white-space: pre; overflow: hidden; text-overflow: ellipsis; }
+@keyframes tip { from { opacity: 0; transform: translateY(3px); } }
+
+.aviso { padding: 8px 10px; border-radius: 8px; border: 1px solid var(--warn); color: var(--ink); background: var(--surface); font-size: 13px; display: grid; gap: 6px; }
+
+/* ---------- Editor: textarea transparente sobre una capa coloreada ---------- */
+.editor {
+  --lh: calc(var(--code-size) * 1.6); --pad: 10px;
+  position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; min-height: 0;
+  border-radius: 8px; background: var(--code-bg); overflow: hidden;
+  box-shadow: inset 0 0 0 1px var(--metal-negro), inset 0 0 0 2px var(--line), inset 0 3px 12px rgba(0, 0, 0, .45);
+  font-family: var(--f-code); font-size: var(--code-size);
+}
+.editor.soltar { outline: 2px dashed var(--accent); outline-offset: -2px; }
+.gutter { overflow: hidden; border-right: 1px solid var(--line); color: var(--muted); user-select: none; min-width: 2.4em; }
+.gutter-in { padding: var(--pad) 7px var(--pad) 8px; text-align: right; font-variant-numeric: tabular-nums; }
+.gutter-in div { line-height: var(--lh); font-size: .82em; }
+.gutter-in div.corre { color: var(--accent); font-weight: 600; }
+.gutter-in div.err { color: var(--bad); font-weight: 600; }
+.area { position: relative; min-width: 0; overflow: hidden; }
+.banda { position: absolute; left: 0; right: 0; pointer-events: none; display: none; }
+.banda.corre { display: block; background: var(--accent-soft); }
+.banda.err { display: block; background: var(--bad-soft); }
+textarea[data-editor="codigo"], .espejo, .resaltado, .bloques-texto {
+  font: inherit; line-height: var(--lh); padding: var(--pad); tab-size: 2; letter-spacing: 0; font-variant-ligatures: none;
+  white-space: pre-wrap; overflow-wrap: anywhere; word-break: normal;
+}
+textarea[data-editor="codigo"] {
+  position: relative; z-index: 1; display: block; width: 100%; height: 100%; margin: 0; border: 0; outline: none; resize: none;
+  background: transparent; color: var(--ink); overflow: auto; caret-color: var(--accent); border-radius: 0;
+}
+.editor.colores textarea[data-editor="codigo"] { color: transparent; -webkit-text-fill-color: transparent; }
+.editor.colores textarea[data-editor="codigo"]::selection { background: var(--accent-soft); }
+.resaltado { position: absolute; top: 0; left: 0; margin: 0; color: var(--ink); pointer-events: none; display: none; }
+.editor.colores .resaltado { display: block; }
+.resaltado .com, .bloques-texto .com { color: var(--tk-com); font-style: italic; }
+.resaltado .str, .bloques-texto .str { color: var(--tk-str); }
+.resaltado .num, .bloques-texto .num { color: var(--tk-num); }
+.resaltado .kw, .bloques-texto .kw { color: var(--tk-kw); font-weight: 600; }
+.resaltado .maq, .bloques-texto .maq { color: var(--tk-var); font-weight: 600; }
+.resaltado .fn, .bloques-texto .fn { color: var(--tk-fn); }
+.resaltado .prop, .bloques-texto .prop { color: var(--tk-prop); }
+.resaltado .hueco, .bloques-texto .hueco { background: var(--warn-soft); outline: 1px dashed var(--warn); border-radius: 3px; }
+.espejo { position: absolute; top: 0; left: 0; visibility: hidden; pointer-events: none; }
+.espejo div { min-height: var(--lh); }
+
+/* ---------- Seudocódigo: el mismo programa como frases (seudo.js) ----------
+   Cada renglón es una placa con una franja del color de su clase de orden; los valores que se
+   eligen son chips con los colores del código. Los bloques de control sangran con una guía. */
+.modos-codigo { display: inline-flex; gap: 2px; }
+.prog-seudo {
+  --c-accion: var(--tk-fn); --c-sentido: var(--rol-rastreo); --c-espera: var(--warn); --c-control: var(--ok);
+  position: relative; flex: 1 1 auto; min-height: 9rem; overflow: auto; overscroll-behavior: contain; padding: 10px 10px 14px;
+  border-radius: 8px; background: var(--code-bg); font-family: var(--f-body); font-size: calc(var(--code-size) * 1.04); line-height: 1.35;
+  box-shadow: inset 0 0 0 1px var(--metal-negro), inset 0 0 0 2px var(--line), inset 0 3px 12px rgba(0, 0, 0, .45);
+}
+.prog-seudo .lista { display: flex; flex-direction: column; gap: 3px; }
+.prog-seudo .inicio {
+  display: inline-block; margin-bottom: 6px; padding: 1px 8px; border-radius: 4px; cursor: pointer;
+  font-family: var(--f-display); font-stretch: 118%; font-size: 10.5px; font-weight: 750; letter-spacing: .14em; text-transform: uppercase; color: var(--muted);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.prog-seudo .fila {
+  --c: var(--c-accion);
+  display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; min-height: 34px; padding: 4px 8px 4px 10px; border-radius: 6px; cursor: pointer;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--c) 10%, transparent), rgba(255, 255, 255, .015) 40%);
+  box-shadow: inset 3px 0 0 var(--c);
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; touch-action: manipulation;
+}
+.prog-seudo .sentido { --c: var(--c-sentido); }
+.prog-seudo .espera { --c: var(--c-espera); }
+.prog-seudo .control { --c: var(--c-control); }
+.prog-seudo .fila:hover { background: linear-gradient(90deg, color-mix(in srgb, var(--c) 18%, transparent), rgba(255, 255, 255, .03) 50%); }
+.prog-seudo .kw, .prog-seudo .kc { color: var(--c); font-weight: 760; }
+.prog-seudo .tx { color: var(--muted); }
+.prog-seudo .slot {
+  border: 1px solid var(--line); border-radius: 5px; padding: 1px 7px; min-height: 26px; cursor: pointer;
+  background: #0A0F13; color: var(--ink); font-family: var(--f-code); font-size: .92em; font-weight: 600;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, .5);
+}
+.prog-seudo .slot:hover { border-color: var(--accent); }
+.prog-seudo .slot.abierto { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+.prog-seudo .slot-var, .prog-seudo .slot-lugar, .prog-seudo .slot-red { color: var(--tk-var); }
+.prog-seudo .slot-tipo, .prog-seudo .slot-alt, .prog-seudo .slot-sensor { color: var(--tk-str); }
+.prog-seudo .slot-s, .prog-seudo .slot-n, .prog-seudo .slot-cond-n { color: var(--tk-num); }
+.prog-seudo .slot-valor, .prog-seudo .slot-cond-que { color: var(--tk-prop); }
+.prog-seudo .slot-cond-op { color: var(--warn); font-family: var(--f-body); }
+.prog-seudo .slot-nivel { color: var(--muted); }
+.prog-seudo .slot .nada { color: var(--muted); font-weight: 400; }
+.prog-seudo .cond { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 2px 4px; border-radius: 6px; background: color-mix(in srgb, var(--c-control) 9%, transparent); }
+.prog-seudo .contenedor > .cuerpo { margin: 2px 0 2px 12px; padding: 1px 0 1px 10px; box-shadow: inset 2px 0 0 color-mix(in srgb, var(--c-control) 35%, transparent); }
+.prog-seudo .contenedor > .fila.pie, .prog-seudo .contenedor > .fila.sino { min-height: 24px; padding-block: 1px; font-size: .88em; background: none; box-shadow: none; color: var(--muted); }
+.prog-seudo .contenedor > .fila.sino .kc { color: var(--c-control); }
+.prog-seudo .nodo.sel > .fila.cabeza, .prog-seudo .fila.simple.sel { box-shadow: inset 3px 0 0 var(--c), 0 0 0 1.5px var(--accent); }
+.prog-seudo .fila.corre { box-shadow: inset 3px 0 0 var(--accent), 0 0 0 2px var(--accent), 0 0 14px var(--accent-soft); }
+.prog-seudo .fila.err { box-shadow: inset 3px 0 0 var(--bad), 0 0 0 2px var(--bad); }
+.prog-seudo .vacio { padding: 5px 10px; border: 1.5px dashed var(--line); border-radius: 6px; color: var(--muted); font-size: .85em; cursor: pointer; }
+.prog-seudo .cursor { position: relative; height: 0; margin: 2px 0; border-top: 2px solid var(--accent); }
+.prog-seudo .cursor span {
+  position: absolute; right: 0; top: -.8em; padding: 0 5px; border-radius: 3px; background: var(--code-bg); color: var(--accent);
+  font-size: 10px; font-weight: 750; letter-spacing: .06em; text-transform: uppercase;
+}
+.prog-seudo .seudo-nota { margin-bottom: 8px; padding: 6px 9px; border-radius: 6px; border: 1px solid var(--warn); color: var(--ink); font-size: 12.5px; background: var(--warn-soft); }
+.prog-seudo.quieto .fila, .prog-seudo.quieto .slot { cursor: default; }
+.prog-seudo .arrastrando { opacity: .35; }
+.prog-seudo .soltar-linea { position: absolute; height: 0; border-top: 3px solid var(--ok); pointer-events: none; z-index: 2; box-shadow: 0 0 8px var(--ok); }
+.prog-seudo .soltar-linea::before { content: ""; position: absolute; left: -4px; top: -6.5px; width: 9px; height: 9px; border-radius: 50%; background: var(--ok); }
+.fantasma-seudo {
+  position: fixed; left: 0; top: 0; z-index: 95; pointer-events: none; opacity: .92; max-width: 70vw; border-radius: 7px;
+  font-family: var(--f-body); background: var(--surface-2); box-shadow: 0 0 0 1px var(--accent), 0 8px 24px rgba(0, 0, 0, .5);
+}
+.fantasma-seudo .fila { display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; padding: 4px 8px; }
+/* Ladrillos de la paleta de seudocódigo: icono grabado y su palabra. */
+.paleta-seudo .ladrillo { width: auto; padding: 0 10px 0 6px; gap: 6px; display: flex; align-items: center; }
+.paleta-seudo .ladrillo svg { width: 24px; height: 24px; }
+.paleta-seudo .ladrillo span { font-size: 12.5px; font-weight: 750; color: var(--grabado); text-shadow: 0 1px 0 var(--grabado-luz); white-space: nowrap; }
+.paleta-seudo .ladrillo:hover span, .paleta-seudo .ladrillo:focus-visible span { color: var(--ink); text-shadow: none; }
+.paleta-seudo.borrar { outline: 2px dashed var(--bad); outline-offset: 2px; }
+.paleta-seudo.borrar::after { content: "Suelta aquí para borrar"; flex: none; align-self: center; padding: 0 8px; font-size: 12.5px; font-weight: 700; color: var(--bad); }

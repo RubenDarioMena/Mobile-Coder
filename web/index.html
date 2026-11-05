@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <!-- resizes-content: con el teclado abierto la página se encoge y las barras quedan justo encima de él. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+  <meta name="theme-color" content="#0B0F13">
+  <title>Mobile Coder</title>
+  <!-- Interfaz del editor compartida con Code Battle Lite (copia sin editar: web/cmg/ORIGEN.json). -->
+  <link rel="stylesheet" href="cmg/shared/editor/tema.css?v=1"><link rel="stylesheet" href="cmg/shared/editor/editor.css?v=1">
+  <link rel="stylesheet" href="cmg/shared/css/edicion.css?v=7"><link rel="stylesheet" href="cmg/shared/editor/autonomo.css?v=3">
+  <link rel="stylesheet" href="app/app.css?v=1">
+</head>
+<body>
+  <div class="ide" id="ide">
+    <!-- Barra superior mínima: archivos, archivo abierto y sus acciones. No se pliega, ni con el teclado. -->
+    <header class="barra-sup" role="toolbar" aria-label="Acciones">
+      <button class="mini" id="b-archivos" type="button" aria-label="Archivos del proyecto" aria-controls="archivos" aria-expanded="false" data-tip="Archivos"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2.2h7a2 2 0 0 1 2 2v7.8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/></svg></button>
+      <button class="nombre-archivo" id="b-nombre" type="button" aria-controls="archivos" data-tip="Archivos"><span class="lenguaje-archivo" id="lenguaje-archivo"></span><span class="nombre" id="nombre-archivo">…</span><span class="guardado" id="guardado" aria-live="polite"></span></button>
+      <div class="acciones" role="group" aria-label="Acciones del código">
+        <button class="mini b-ejecutar" id="b-ejecutar" type="button" aria-label="Ejecutar" data-tip="Ejecutar" data-tip-cod="Ctrl+Enter"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="ico-play" d="M8 5.2v13.6l10.6-6.8z" fill="currentColor"/><rect class="ico-stop" x="6.5" y="6.5" width="11" height="11" rx="1.6" fill="currentColor"/></svg></button>
+        <button class="mini b-teclado" id="b-teclado" type="button" aria-pressed="false" aria-label="Modo sin teclado" data-tip="Modo sin teclado"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12.5" rx="2.2"/><path d="M6.5 10h.01M10 10h.01M13.5 10h.01M17 10h.01M6.5 13.6h.01M17 13.6h.01M9.5 14.6h5"/><path class="tachado" d="M3.6 3.4l16.8 17.2"/></svg></button>
+        <button class="mini" id="b-menu" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="menu" aria-label="Más opciones" data-tip="Más opciones"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="currentColor"><circle cx="5.5" cy="12" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="18.5" cy="12" r="1.9"/></svg></button>
+      </div>
+    </header>
+    <!-- El editor compartido se monta aquí. «app» activa la distribución del teléfono de edicion.css (ProtoMouse). -->
+    <main class="app raiz-editor" id="raiz-editor"></main>
+  </div>
+
+  <!-- Hoja inferior: consola. Pestaña con una flecha en la esquina inferior derecha del código; app/hoja.js la monta dentro del editor. -->
+  <template id="plantilla-hoja">
+    <button class="hoja-abrir" type="button" aria-controls="hoja" aria-expanded="false" aria-label="Abrir la consola" data-tip="Consola"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg></button>
+    <section class="hoja" id="hoja" role="dialog" aria-label="Consola" hidden>
+      <div class="hoja-asa" role="separator" tabindex="0" aria-orientation="horizontal" aria-controls="hoja" aria-label="Alto de la consola: arrastra o usa las flechas; hasta abajo la cierra"><span></span></div>
+      <div class="hoja-cab">
+        <h2 class="hoja-titulo">Consola</h2>
+        <span class="motor-estado" id="motor-estado" aria-live="polite"></span>
+        <button class="mini" id="b-limpiar" type="button" aria-label="Limpiar la consola" data-tip="Limpiar"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7h14M10 7V4.8h4V7M7 7l.8 12.2h8.4L17 7M10.2 10.5v5.5M13.8 10.5v5.5"/></svg></button>
+        <button class="mini" id="b-cerrar-hoja" type="button" aria-label="Cerrar la consola" data-tip="Cerrar"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+      </div>
+      <div class="consola" id="consola" role="log" aria-label="Salida del programa" tabindex="0"></div>
+    </section>
+  </template>
+
+  <!-- Archivos: la carpeta del proyecto (en Android, la que elige el usuario). -->
+  <section class="panel" id="archivos" role="dialog" aria-labelledby="archivos-titulo" hidden>
+    <div class="panel-cab">
+      <h2 id="archivos-titulo">Archivos</h2>
+      <button class="mini" id="b-cerrar-archivos" type="button" aria-label="Cerrar los archivos" data-tip="Cerrar"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <div class="proyecto">
+      <div class="proyecto-datos"><span class="proyecto-tipo" id="proyecto-tipo"></span><b id="proyecto-nombre"></b></div>
+      <button class="btn" id="b-carpeta" type="button" hidden>Elegir carpeta</button>
+    </div>
+    <nav class="ruta" id="ruta" aria-label="Carpeta actual"></nav>
+    <ul class="lista-archivos" id="lista-archivos" aria-label="Contenido de la carpeta"></ul>
+    <p class="nota" id="nota-archivos"></p>
+    <div class="panel-pie">
+      <button class="btn" id="b-nuevo-archivo" type="button">Nuevo archivo</button>
+      <button class="btn" id="b-nueva-carpeta" type="button">Nueva carpeta</button>
+    </div>
+  </section>
+
+  <dialog class="dialogo" id="dialogo-nombre" aria-labelledby="dialogo-nombre-titulo">
+    <form method="dialog">
+      <h2 id="dialogo-nombre-titulo">Nuevo archivo</h2>
+      <label><span id="dialogo-nombre-etiqueta">Nombre</span><input id="dialogo-nombre-campo" autocomplete="off" autocapitalize="off" spellcheck="false" required></label>
+      <p class="nota" id="dialogo-nombre-nota"></p>
+      <div class="dialogo-botones"><button class="btn" value="cancelar" formnovalidate>Cancelar</button><button class="btn primario" value="aceptar">Crear</button></div>
+    </form>
+  </dialog>
+
+  <dialog class="dialogo" id="acerca" aria-labelledby="acerca-titulo">
+    <form method="dialog">
+      <h2 id="acerca-titulo">Mobile Coder</h2>
+      <dl class="acerca-datos" id="acerca-datos"></dl>
+      <div class="dialogo-botones"><button class="btn primario" value="cerrar">Cerrar</button></div>
+    </form>
+  </dialog>
+
+  <!-- Menú ⋯: placas metálicas, como las variantes de la paleta. -->
+  <div class="variantes menu" id="menu" role="menu" aria-label="Más opciones" hidden></div>
+
+  <script src="cmg/shared/vendor/acorn-8.11.3.js"></script><script src="cmg/shared/js/iconos.js?v=6"></script>
+  <script src="cmg/shared/js/estructura.js?v=4"></script><script src="cmg/shared/editor/javascript.js?v=1"></script>
+  <script src="cmg/shared/editor/lenguajes.js?v=2"></script><script src="cmg/shared/editor/plantillas.js?v=5"></script>
+  <script src="cmg/shared/editor/adaptador-js.js?v=2"></script>
+  <script src="cmg/shared/vendor/lezer-python-1.1.19.js"></script><script src="cmg/shared/editor/python.js?v=3"></script>
+  <script src="cmg/shared/editor/estructura-python.js?v=2"></script><script src="cmg/shared/editor/adaptador-python.js?v=4"></script>
+  <script src="cmg/shared/editor/vida.js?v=1"></script><script src="cmg/shared/editor/tips.js?v=1"></script>
+  <script src="cmg/shared/editor/edicion.js?v=5"></script>
+  <script src="cmg/shared/editor/nucleo-ui.js?v=4"></script><script src="cmg/shared/editor/editor.js?v=4"></script>
+  <script src="app/puente.js?v=1"></script><script src="app/archivos.js?v=1"></script>
+  <script src="app/consola.js?v=1"></script><script src="app/motores.js?v=1"></script>
+  <script src="app/hoja.js?v=1"></script><script src="app/app.js?v=1"></script>
+</body>
+</html>

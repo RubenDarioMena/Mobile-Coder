@@ -1,0 +1,69 @@
+:root {
+  color-scheme: dark;
+  /* Superficies (grafito con sesgo azul) */
+  --bg: #0B0F13;
+  --surface: #131A20;
+  --surface-2: #19222A;
+  --code-bg: #0E1419;
+  --ink: #DCE3E6;
+  --muted: #8C99A3;
+  --line: #26313A;
+  /* Mundo */
+  --grid: #1E2830;
+  --grid-2: #2C3944;
+  --suelo: #121A20;
+  --building: #26313A;
+  --building-top: #33404A;
+  --edge: #5C6B75;
+  --enemigo: #E0644F;
+  --enemigo-frio: #A9B6C2;
+  --misil: #F2B33D;
+  --explosion: #F7B94A;
+  --s-visual: #7FA3FF;
+  --s-termico: #F08A4B;
+  --s-vibra: #5FC28A;
+  --base: rgba(127, 163, 255, .10);
+  /* Robots por función principal (provisional). Evitan el rojo enemigo, el ámbar de los misiles
+     y el azul de la interfaz. La selección es clara y nítida; el halo, difuso y del color de la función. */
+  --rol-ofensiva: #FF5DB8;
+  --rol-rastreo: #2FE0D0;
+  --rol-utilitaria: #B4EE4D;
+  --rol-fabrica: #A887FF;
+  --sel: #F2F6F8;
+  /* Acento y estados */
+  --accent: #7FA3FF;
+  --accent-ink: #0B1220;
+  --accent-soft: rgba(127, 163, 255, .16);
+  --ok: #5FC28A;
+  --warn: #E0AE4A;
+  --warn-soft: rgba(224, 174, 74, .16);
+  --bad: #F07A70;
+  --bad-soft: rgba(240, 122, 112, .16);
+  /* Tipos en el código */
+  --tk-var: #7FA3FF;
+  --tk-fn: #CFA2FF;
+  --tk-prop: #63D2E0;
+  --tk-num: #F27AB0;
+  --tk-str: #9BD56B;
+  --tk-com: #7D8B94;
+  --tk-kw: #E2E7E2;
+  /* Metal */
+  --metal-hi: #9AA4AB;
+  --metal: #59636B;
+  --metal-lo: #262E35;
+  --metal-negro: #05080A;
+  --placa-1: #77818A;          /* placa cepillada, arriba */
+  --placa-2: #545E67;          /* placa cepillada, abajo */
+  --placa-viva-1: #2A333B;     /* placa encendida (hover) */
+  --placa-viva-2: #161C22;
+  --grabado: #0A0E12;          /* tinta del grabado */
+  --grabado-luz: rgba(255, 255, 255, .22);
+  --laton: #B4935A;            /* tornillos */
+  --laton-hi: #E7CF9C;
+  /* Tipos */
+  --f-display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --f-body: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --f-code: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --radius: 10px;
+  --borde-metal: 3px;
+}

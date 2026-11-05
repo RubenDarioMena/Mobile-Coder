@@ -1,0 +1,257 @@
+/* Herramientas compartidas por Factory y War. */
+/* Atajos con variantes: una esquina marcada avisa de que se pueden mantener pulsados. */
+.atajo.con-variantes::after {
+  content: ""; position: absolute; right: 3px; bottom: 3px; width: 0; height: 0; pointer-events: none;
+  border-left: 6px solid transparent; border-bottom: 6px solid var(--grabado); opacity: .75;
+}
+.atajo.con-variantes:hover::after, .atajo.con-variantes.abierto::after { border-bottom-color: var(--c1); opacity: 1; }
+.variantes {
+  position: fixed; z-index: 82; left: 0; top: 0; display: flex; gap: 6px; padding: 6px; border-radius: 10px; max-width: calc(100vw - 12px); overflow-x: auto; scrollbar-width: none;
+  background: repeating-linear-gradient(90deg, rgba(255, 255, 255, .03) 0 1px, transparent 1px 3px), linear-gradient(180deg, #3A434B, #262E35);
+  box-shadow: 0 0 0 1px var(--metal-negro), inset 0 1px 0 rgba(255, 255, 255, .12), 0 10px 26px rgba(0, 0, 0, .55); animation: tip .1s ease-out;
+}
+.variante {
+  --t1: var(--grabado); --t2: var(--grabado); --t3: var(--grabado);
+  flex: none; display: grid; justify-items: center; align-content: center; gap: 2px; width: 64px; min-height: 64px; padding: 5px 3px; border: 0; border-radius: 7px; cursor: pointer;
+  background: repeating-linear-gradient(90deg, rgba(255, 255, 255, .05) 0 1px, transparent 1px 3px), linear-gradient(180deg, var(--placa-1), var(--placa-2));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .32), inset 0 -1px 0 rgba(0, 0, 0, .45), 0 0 0 1px var(--metal-negro);
+}
+.variante svg { width: 28px; height: 28px; overflow: visible; }
+.variante span { font-size: 9.5px; line-height: 1.15; font-weight: 700; text-align: center; color: var(--grabado); overflow-wrap: anywhere; }
+.variante.principal { box-shadow: inset 0 1px 0 rgba(255, 255, 255, .32), inset 0 -1px 0 rgba(0, 0, 0, .45), 0 0 0 1px var(--metal-negro), 0 0 0 3px rgba(255, 255, 255, .12); }
+.variante:hover, .variante:focus-visible, .variante.activa {
+  --t1: var(--c1); --t2: var(--c2, var(--c1)); --t3: var(--c3, var(--c2, var(--c1)));
+  background: radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--c1) 22%, transparent), transparent 70%), linear-gradient(180deg, var(--placa-viva-1), var(--placa-viva-2));
+  box-shadow: 0 0 0 1px var(--c1), 0 0 12px color-mix(in srgb, var(--c1) 40%, transparent);
+}
+.variante:hover span, .variante.activa span, .variante:focus-visible span { color: var(--ink); }
+.variante .t1 { fill: var(--t1); } .variante .t2 { fill: var(--t2); } .variante .t3 { fill: var(--t3); }
+.variante .s1 { fill: none; stroke: var(--t1); } .variante .s2 { fill: none; stroke: var(--t2); } .variante .s3 { fill: none; stroke: var(--t3); }
+.variante .letra { font-family: var(--f-code); font-weight: 700; }
+
+
+/* ---------- Modo sin teclado: el textarea guarda el texto; la vista de bloques es la que se toca ---------- */
+.b-teclado svg { width: 19px; height: 19px; display: block; margin: auto; }
+.b-teclado .tachado { display: none; }
+.b-teclado[aria-pressed="true"] { color: var(--bad); border-color: var(--bad); background: var(--bad-soft); box-shadow: 0 0 6px var(--bad-soft); }
+.b-teclado[aria-pressed="true"] .tachado { display: inline; }
+.editor.sin-teclado textarea[data-editor="codigo"] { visibility: hidden; pointer-events: none; }
+.editor.sin-teclado .resaltado, .editor.sin-teclado.colores .resaltado { display: none; }
+.bloques {
+  position: absolute; inset: 0; z-index: 2; overflow: auto; overscroll-behavior: contain; outline: none;
+  touch-action: pan-x pan-y; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; cursor: default;
+}
+.bloques:focus-visible { box-shadow: inset 0 0 0 2px var(--accent-soft); }
+.bloques-in { position: relative; z-index: 0; min-height: 100%; }
+.bloques-capa { position: absolute; inset: 0; pointer-events: none; }
+.bloques-texto { position: relative; z-index: 1; margin: 0; color: var(--ink); }
+.bloques-texto .ln { min-height: var(--lh); }
+.bloques-texto span { border-radius: 3px; }
+.bloques-texto .sel { touch-action: none; }
+.editor:not(.colores) .bloques-texto span:not(.hueco) { color: inherit; font-style: normal; font-weight: inherit; }
+@media (hover: hover) {
+  .bloques-texto span:not(.e):hover { box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent); background: rgba(127, 163, 255, .07); }
+}
+.sel-b { position: absolute; z-index: 0; border-radius: 5px; background: var(--accent-soft); box-shadow: 0 0 0 1.5px var(--accent); pointer-events: none; }
+.sel-b.lineas { border-radius: 6px; background: rgba(127, 163, 255, .11); box-shadow: inset 3px 0 0 var(--accent), 0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent); }
+.cursor-b { position: absolute; z-index: 2; border-radius: 1px; background: var(--accent); animation: cursor-b 1.05s steps(1) infinite; pointer-events: none; }
+@keyframes cursor-b { 50% { opacity: 0; } }
+.destino-b { position: absolute; z-index: 3; pointer-events: none; border-radius: 3px; }
+.destino-b.linea { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+.destino-b.cursor { background: var(--ok); box-shadow: 0 0 6px var(--ok); }
+.destino-b.hueco { outline: 2px solid var(--ok); background: rgba(95, 194, 138, .16); border-radius: 5px; }
+.destino-b.no { background: var(--bad); box-shadow: none; opacity: .7; }
+.editor.arrastrando .bloques { cursor: grabbing; }
+.fantasma-bloque {
+  position: fixed; left: 0; top: 0; z-index: 95; pointer-events: none; max-width: min(70vw, 360px); overflow: hidden; text-overflow: ellipsis; white-space: pre;
+  padding: 4px 9px; border-radius: 7px; border: 1px solid var(--accent); background: var(--surface-2); color: var(--ink);
+  font-family: var(--f-code); font-size: 12.5px; box-shadow: 0 8px 22px rgba(0, 0, 0, .55);
+}
+.fantasma-bloque.no { border-color: var(--bad); opacity: .75; }
+
+/* Asas de línea: en el número (izquierda) o en una columna del borde derecho. */
+.editor.sin-teclado[data-asa="numero"] .gutter { touch-action: none; }
+.editor.sin-teclado[data-asa="numero"] .gutter-in div { cursor: grab; border-radius: 4px; }
+@media (hover: hover) { .editor.sin-teclado[data-asa="numero"] .gutter-in div:hover { color: var(--ink); background: var(--accent-soft); } }
+.asas { position: relative; overflow: hidden; width: 30px; border-left: 1px solid var(--line); touch-action: none; }
+.asas-in { position: absolute; left: 0; right: 0; top: 0; }
+.asas .asa { position: absolute; left: 0; right: 0; height: var(--lh); display: grid; place-items: center; cursor: grab; color: var(--muted); }
+.asas .asa::before { content: ""; width: 9px; height: 13px; background: radial-gradient(circle, currentColor 1.15px, transparent 1.5px) 0 0 / 4.5px 4.33px; opacity: .8; }
+@media (hover: hover) { .asas .asa:hover { color: var(--ink); background: var(--accent-soft); } }
+
+/* Barra de edición: deshacer, copiar, pegar, borrar, ampliar… */
+.barra-edicion {
+  display: none; gap: 4px; align-items: center; flex: none; overflow-x: auto; scrollbar-width: none; padding: 4px; border-radius: 8px;
+  background: repeating-linear-gradient(90deg, rgba(255, 255, 255, .03) 0 1px, transparent 1px 3px), linear-gradient(180deg, #333C44, #20272D);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .1), 0 0 0 1px var(--metal-negro);
+}
+.barra-edicion::-webkit-scrollbar { display: none; }
+.barra-edicion button {
+  flex: none; display: grid; place-items: center; width: 40px; height: 34px; padding: 0; border: 0; border-radius: 6px; cursor: pointer; color: var(--ink);
+  background: linear-gradient(180deg, #48525A, #343D45); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .18), 0 1px 0 var(--metal-negro);
+}
+.barra-edicion button svg { width: 20px; height: 20px; }
+.barra-edicion button:active:not(:disabled) { background: var(--accent); color: var(--accent-ink); }
+.barra-edicion button:disabled { opacity: .38; cursor: default; }
+.barra-edicion button.b-teclado[aria-pressed="true"] { color: var(--bad); background: linear-gradient(180deg, #4A3335, #352427); box-shadow: inset 0 0 0 1px var(--bad), 0 0 6px var(--bad-soft); }
+.barra-edicion .sep-pal { flex: none; width: 2px; height: 22px; margin: 0 2px; background: var(--metal-negro); box-shadow: 1px 0 0 rgba(255, 255, 255, .08); }
+.toast-edicion {
+  position: fixed; left: 0; top: 0; z-index: 96; pointer-events: none; padding: 4px 10px; border-radius: 6px; font-size: 12.5px; font-weight: 600;
+  background: #05080A; color: var(--ink); border: 1px solid var(--metal); box-shadow: 0 6px 16px rgba(0, 0, 0, .5); animation: tip .1s ease-out;
+}
+
+/* Sugerencias: valores posibles para un hueco, un argumento o una condición. */
+.sugerencias {
+  position: fixed; left: 0; top: 0; z-index: 88; width: min(330px, calc(100vw - 12px)); overflow: auto; overscroll-behavior: contain;
+  padding: 0 4px 4px; border-radius: 10px; background: var(--surface); border: 1px solid var(--metal); box-shadow: 0 12px 30px rgba(0, 0, 0, .6);
+  font-size: 13px; animation: sug-entra .08s ease-out;
+}
+/* Solo opacidad: el transform coloca la lista y no debe animarse (la lista saltaba 80 ms después de abrirse). */
+@keyframes sug-entra { from { opacity: 0; } }
+/* En una pantalla sin sitio junto a la selección, la lista ocupa el ancho como una hoja inferior. */
+.sugerencias.hoja { width: calc(100vw - 12px); border-radius: 12px 12px 8px 8px; }
+.sugerencias.hoja .sug-cab { padding-top: 4px; padding-bottom: 3px; }
+.sugerencias.hoja .sug-g { padding: 3px 6px 0; font-size: 10px; }
+.sug-cab { position: sticky; top: 0; z-index: 1; display: flex; align-items: baseline; gap: 8px; padding: 7px 4px 5px 6px; background: var(--surface); border-bottom: 1px solid var(--line); margin-bottom: 2px; }
+.sug-cab b { flex: none; white-space: nowrap; font-family: var(--f-display); font-stretch: 112%; font-size: 11.5px; letter-spacing: .1em; text-transform: uppercase; }
+.sug-cab span { min-width: 0; font-family: var(--f-code); font-size: 11.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sug-x { margin-left: auto; flex: none; border: 0; background: none; color: var(--muted); font-size: 18px; line-height: 1; width: 30px; height: 26px; cursor: pointer; border-radius: 5px; }
+.sug-x:hover { color: var(--ink); background: var(--surface-2); }
+.sug-g { padding: 7px 6px 2px; font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: var(--muted); }
+.sug { display: flex; align-items: baseline; gap: 10px; width: 100%; min-height: 36px; padding: 6px 8px; border: 0; border-radius: 6px; background: none; color: var(--ink); text-align: left; cursor: pointer; }
+.sug:hover, .sug.activa { background: var(--accent-soft); }
+.sug code { font-family: var(--f-code); font-size: 13px; white-space: pre-wrap; overflow-wrap: anywhere; font-variant-ligatures: none; }
+.sug code.str { color: var(--tk-str); } .sug code.num { color: var(--tk-num); } .sug code.kw { color: var(--tk-kw); font-weight: 600; }
+.sug code.fn { color: var(--tk-fn); } .sug code.prop { color: var(--tk-prop); } .sug code.var { color: var(--tk-var); font-weight: 600; }
+.sug code.op { color: var(--warn); font-weight: 700; min-width: 2.4em; }
+.sug .nota { margin-left: auto; font-size: 11.5px; color: var(--muted); text-align: right; }
+.sug.escribir { color: var(--muted); font-size: 12.5px; margin-top: 2px; border-top: 1px solid var(--line); border-radius: 0 0 6px 6px; }
+.sug-num { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 6px; }
+.sug-num button { width: 44px; height: 36px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface-2); color: var(--ink); font-size: 20px; font-weight: 700; cursor: pointer; }
+.sug-num button:active { background: var(--accent); color: var(--accent-ink); }
+.sug-num code { font-family: var(--f-code); font-size: 15px; color: var(--tk-num); min-width: 4ch; text-align: center; }
+.sug-escribir { display: flex; gap: 8px; align-items: end; padding: 8px 4px 4px; }
+.sug-escribir label { display: grid; gap: 3px; flex: 1; font-size: 11.5px; color: var(--muted); }
+.sug-escribir input { min-height: 36px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 7px; background: var(--code-bg); color: var(--ink); font-family: var(--f-code); font-size: 16px; }
+
+
+/* Grupos de la barra de edición: una ranura grabada entre grupo y grupo. */
+.barra-edicion .grupo-ed { display: flex; flex: none; gap: 4px; align-items: center; }
+.barra-edicion .grupo-ed + .grupo-ed::before { content: ""; flex: none; width: 2px; height: 22px; margin: 0 2px 0 1px; background: var(--metal-negro); box-shadow: 1px 0 0 rgba(255, 255, 255, .08); }
+.cmg-anfitrion[data-forma="movil"] .barra-edicion .grupo-ed { gap: 3px; }
+
+/* ---------- Forma del anfitrión ----------
+   .cmg-anfitrion es el elemento que lleva data-forma, data-modo y data-sin-teclado: la .app del juego
+   o la raíz de un editor autónomo. Estas reglas valen igual para los dos. */
+/* Paleta y barra de edición: una sola línea cada una, deslizante (rueda, arrastre o dedo). */
+.paleta, .barra-edicion { flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain; }
+/* Paleta compacta en el teléfono. */
+.cmg-anfitrion[data-forma="movil"] .paleta { padding: 4px; gap: 4px; }
+.cmg-anfitrion[data-forma="movil"] .atajo { width: 40px; height: 40px; }
+.cmg-anfitrion[data-forma="movil"] .atajo svg { width: 26px; height: 26px; }
+/* Ladrillos solo con icono (el nombre sigue en aria-label): sin etiqueta que asome junto al último. */
+.cmg-anfitrion[data-forma="movil"] .paleta-seudo .ladrillo { padding: 0; justify-content: center; }
+.cmg-anfitrion[data-forma="movil"] .paleta-seudo .ladrillo span { display: none; }
+/* Barra de edición: fija bajo la paleta en el teléfono (también con el teclado abierto);
+   en PC solo con el modo sin teclado, donde el teclado ya no copia ni pega. */
+.cmg-anfitrion[data-forma="movil"] .barra-edicion,
+.cmg-anfitrion[data-sin-teclado="true"] .barra-edicion { display: flex; }
+.cmg-anfitrion[data-forma="movil"] .barra-edicion { padding: 3px; gap: 3px; }
+.cmg-anfitrion[data-forma="movil"] .barra-edicion button { width: 38px; height: 32px; }
+.cmg-anfitrion[data-forma="escritorio"] .barra-edicion .b-teclado,
+.cmg-anfitrion[data-forma="escritorio"] .barra-edicion .grupo-ed.solo-teclado { display: none; }
+/* Seudocódigo y bloques: la barra de edición actúa sobre el renglón elegido. */
+.cmg-anfitrion:is([data-modo="pseudo"], [data-modo="bloques"]) .barra-edicion { display: flex; }
+.cmg-anfitrion:is([data-modo="pseudo"], [data-modo="bloques"]) .b-teclado, .cmg-anfitrion:is([data-modo="pseudo"], [data-modo="bloques"]) .grupo-ed.solo-teclado,
+.cmg-anfitrion:is([data-modo="pseudo"], [data-modo="bloques"]) .barra-edicion [data-accion="linea"] { display: none; }
+
+/* Orden de la barra (Ajustes → Ordenar botones y grupos). */
+.orden-barra .orden-grupos { display: grid; gap: 8px; margin: 10px 0 12px; }
+.orden-grupo { display: flex; align-items: center; gap: 8px; padding: 6px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--line); }
+.orden-grupo.nuevo { border-style: dashed; background: none; }
+.orden-asa { flex: none; display: grid; place-items: center; width: 28px; min-height: 40px; border-radius: 6px; cursor: grab; color: var(--muted); font-weight: 800; letter-spacing: -2px; touch-action: none; -webkit-user-select: none; user-select: none; }
+.orden-asa:hover { color: var(--ink); background: var(--accent-soft); }
+.orden-btns { display: flex; flex-wrap: wrap; gap: 6px; min-height: 40px; align-items: center; flex: 1; }
+.orden-btn {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 38px; padding: 0 10px 0 7px; border-radius: 6px; cursor: grab; font-size: 12.5px; font-weight: 600;
+  color: var(--ink); background: linear-gradient(180deg, #48525A, #343D45); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .18), 0 1px 0 var(--metal-negro);
+  touch-action: none; -webkit-user-select: none; user-select: none;
+}
+.orden-btn svg { width: 18px; height: 18px; }
+.orden-vacio { color: var(--muted); font-size: 12.5px; padding: 0 6px; }
+.orden-btn.levantado, .orden-grupo.levantado { opacity: .55; outline: 2px solid var(--accent); outline-offset: 1px; cursor: grabbing; }
+
+/* Anillo de carga: mantener el dedo quieto llena el círculo; lleno, abre la lista de alternativas. */
+.anillo-carga { position: fixed; left: 0; top: 0; z-index: 97; width: 52px; height: 52px; pointer-events: none; border-radius: 50%;
+  background: rgba(5, 8, 10, .82); box-shadow: 0 0 0 1px var(--metal), 0 8px 20px rgba(0, 0, 0, .5); animation: tip .1s ease-out; }
+.anillo-carga svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.anillo-carga circle { fill: none; stroke-width: 5; }
+.anillo-carga .fondo { stroke: var(--line); }
+.anillo-carga .relleno { --c: 119.4; stroke: var(--accent); stroke-linecap: round; stroke-dasharray: var(--c); stroke-dashoffset: var(--c); }
+.anillo-carga.llena .relleno { animation: anillo-llenar var(--dur, 1s) linear forwards; }
+@keyframes anillo-llenar { to { stroke-dashoffset: 0; } }
+
+/* Hoja baja: prioriza dos valores completos sobre los encabezados de grupo. */
+.sugerencias.hoja.compacta .sug-g { display: none; }
+
+/* ---------- Teléfono (juego): seis botones alrededor del ProtoMouse ----------
+   deshacer · rehacer · selección | ProtoMouse | cortar · copiar · pegar. Los demás botones se ocultan y siguen
+   a mano manteniendo pulsado su pariente (esquina marcada). En seudocódigo y bloques queda la barra completa.
+   Mismo marcado que la barra de PC: aquí solo cambia qué se ve y en qué orden. */
+.ed-movil { display: none; }
+.app.cmg-anfitrion[data-forma="movil"]:not([data-modo="pseudo"]):not([data-modo="bloques"]) .barra-edicion { gap: 3px; padding: 4px; overflow: visible; }
+.app.cmg-anfitrion[data-forma="movil"]:not([data-modo="pseudo"]):not([data-modo="bloques"]) .barra-edicion::after,
+.app.cmg-anfitrion[data-forma="movil"]:not([data-modo="pseudo"]):not([data-modo="bloques"]) .barra-edicion .grupo-ed + .grupo-ed::before { content: none; }
+.app.cmg-anfitrion[data-forma="movil"]:not([data-modo="pseudo"]):not([data-modo="bloques"]) .barra-edicion :is(.grupo-ed, .ed-movil) { display: contents; }
+.app.cmg-anfitrion[data-forma="movil"]:not([data-modo="pseudo"]):not([data-modo="bloques"]) .barra-edicion button { display: none; }
+.app.cmg-anfitrion[data-forma="movil"]:not([data-modo="pseudo"]):not([data-modo="bloques"]) .barra-edicion :is([data-accion="deshacer"], [data-accion="rehacer"], [data-seleccion], [data-accion="cortar"], [data-accion="copiar"], [data-accion="pegar"]) {
+  display: grid; position: relative; width: 38px; height: 38px;
+}
+.app.cmg-anfitrion[data-forma="movil"]:not([data-modo="pseudo"]):not([data-modo="bloques"]) .barra-edicion [data-accion="deshacer"] { order: 1; }
+.app.cmg-anfitrion[data-forma="movil"]:not([data-modo="pseudo"]):not([data-modo="bloques"]) .barra-edicion [data-accion="rehacer"] { order: 2; }
+.app.cmg-anfitrion[data-forma="movil"]:not([data-modo="pseudo"]):not([data-modo="bloques"]) .barra-edicion [data-seleccion] { order: 3; }
+.app.cmg-anfitrion[data-forma="movil"]:not([data-modo="pseudo"]):not([data-modo="bloques"]) .barra-edicion .protomouse { order: 4; display: grid; }
+.app.cmg-anfitrion[data-forma="movil"]:not([data-modo="pseudo"]):not([data-modo="bloques"]) .barra-edicion [data-accion="cortar"] { order: 5; }
+.app.cmg-anfitrion[data-forma="movil"]:not([data-modo="pseudo"]):not([data-modo="bloques"]) .barra-edicion [data-accion="copiar"] { order: 6; }
+.app.cmg-anfitrion[data-forma="movil"]:not([data-modo="pseudo"]):not([data-modo="bloques"]) .barra-edicion [data-accion="pegar"] { order: 7; }
+/* Esquina marcada: manteniendo pulsado aparecen más acciones. */
+.app.cmg-anfitrion[data-forma="movil"]:not([data-modo="pseudo"]):not([data-modo="bloques"]) .barra-edicion button.con-variantes::after {
+  content: ""; position: absolute; right: 3px; bottom: 3px; width: 0; height: 0; pointer-events: none;
+  border-left: 5px solid transparent; border-bottom: 5px solid rgba(220, 227, 230, .42);
+}
+.barra-edicion button.abierto { color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent), 0 0 8px color-mix(in srgb, var(--accent) 40%, transparent); }
+/* Selección: un interruptor con luz. Encendido, el ProtoMouse amplía lo elegido. */
+.barra-edicion .b-seleccion[aria-pressed="true"] {
+  color: #EAF0FF; background: linear-gradient(180deg, #3A5288, #243559);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .22), inset 0 0 0 1px var(--accent), 0 0 12px color-mix(in srgb, var(--accent) 60%, transparent);
+}
+.barra-edicion .b-seleccion[aria-pressed="true"] svg { filter: drop-shadow(0 0 3px var(--accent)); }
+/* ProtoMouse: una franja hundida, como un trackpad grabado en la barra. Se enciende al arrastrar. */
+.protomouse {
+  flex: 1 1 auto; min-width: 64px; height: 38px; margin: 0 3px; border-radius: 9px; place-items: center; position: relative; cursor: grab;
+  touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; color: var(--muted);
+  background: radial-gradient(circle, rgba(255, 255, 255, .075) 0 .9px, transparent 1.3px) 0 0 / 7px 7px, linear-gradient(180deg, #12181D, #0C1115);
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, .65), inset 0 0 0 1px var(--metal-negro), 0 1px 0 rgba(255, 255, 255, .08);
+  transition: color .12s, box-shadow .12s;
+}
+.protomouse svg { width: 24px; height: 24px; opacity: .85; pointer-events: none; }
+.barra-edicion.seleccionando .protomouse { color: var(--accent); box-shadow: inset 0 2px 6px rgba(0, 0, 0, .65), inset 0 0 0 1px color-mix(in srgb, var(--accent) 65%, transparent); }
+.protomouse.vivo {
+  color: var(--accent); cursor: grabbing;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, .65), 0 0 0 1px var(--accent), 0 0 14px color-mix(in srgb, var(--accent) 50%, transparent);
+}
+/* Variantes de la barra: las placas de la paleta con los iconos de trazo de la barra. */
+.variantes-ed .variante { color: var(--t1); }
+.variantes-ed .variante svg { width: 26px; height: 26px; }
+.variantes-ed .variante:disabled { opacity: .4; cursor: default; }
+/* Puntero del ProtoMouse y, con el teclado cerrado, el cursor y la selección que el navegador no pinta. */
+.pm-capa { position: absolute; inset: 0; z-index: 3; overflow: hidden; pointer-events: none; }
+.pm-cursor { position: absolute; width: 2px; border-radius: 1px; background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+.pm-sel { position: absolute; border-radius: 3px; background: var(--accent-soft); box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent); }
+.pm-fantasma {
+  position: absolute; left: -8px; top: -8px; width: 16px; height: 16px; border-radius: 50%;
+  background: rgba(220, 227, 230, .25); box-shadow: 0 0 0 1.5px rgba(220, 227, 230, .7), 0 0 10px rgba(127, 163, 255, .45);
+}
+.barra-edicion.seleccionando ~ .editor .pm-fantasma, .pm-fantasma.sel { background: color-mix(in srgb, var(--accent) 35%, transparent); box-shadow: 0 0 0 1.5px var(--accent), 0 0 10px color-mix(in srgb, var(--accent) 55%, transparent); }
+/* Pares y signos de la paleta: solo donde el anfitrión los pide (el teléfono del juego). */
+.paleta .solo-movil { display: none; }

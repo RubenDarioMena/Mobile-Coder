@@ -1,0 +1,31 @@
+{
+  "nota": "Copia de la interfaz del editor de Code Battle Lite. No se edita aquí: se cambia allí y se vuelve a copiar con herramientas/sincronizar-editor.mjs.",
+  "repositorio": "https://github.com/RubenDarioMena/Code-Battles_lite",
+  "commit": "56435c70e7b7e628aff211d0e11fdfea59ce671b",
+  "rama": "ccr-f023900d-mpg9ew",
+  "sinCommit": false,
+  "archivos": {
+    "shared/editor/tema.css": "d4c73da68c59c4504dbfc9c836a4f0de8b03d31834f7ad195cc244049ef5d925",
+    "shared/editor/editor.css": "f830b1dfd4056eee782516d65eb5f0053cd8e918951e94a5150f51d0a25013f0",
+    "shared/css/edicion.css": "d4dc49ba5f645ffa0098a5c98a30a5f1064d42817b33cabba36feb6925eeae90",
+    "shared/editor/autonomo.css": "b8f3f949637ff14b130a420725d131263ca37303c1f515f71d1e14a5d52eac83",
+    "shared/vendor/acorn-8.11.3.js": "48160affc321e9f010fc732711a480cd82899bddf46d586431960689c868bdd6",
+    "shared/js/iconos.js": "0ba8c3b542e419f0d3bef857ffdea4e1d8b3b45901a62724895d84254f03c757",
+    "shared/js/estructura.js": "591a988bf88ab4bc1bd3a7cf9be73329ce18c9e15860ec674fada01cae1ffdd4",
+    "shared/editor/javascript.js": "9c99848f4cb7d3fc4eb2259d711263d1e60b0a2125bbf5f1d75b69b1661cc7fc",
+    "shared/editor/lenguajes.js": "2d2268eb7b20a12d5a491f9a6c0ced570c104708b1f909df6e2bc3b91e3d3406",
+    "shared/editor/plantillas.js": "15e09ee10b8fd328687128929568dfca36349123d7d0a863775bc901f3bc3792",
+    "shared/editor/adaptador-js.js": "3e2015b44b71de5110897d6fdbe67a0a9375fb9157fa441a11d20866af90f200",
+    "shared/vendor/lezer-python-1.1.19.js": "b62fd81655cc1cbbf4801b1fbbb8891bedea48e8db5064e248137949bec129f7",
+    "shared/editor/python.js": "0d9a49305f37638c1f47db112663de568e85764e40cf49282f511844095068bf",
+    "shared/editor/estructura-python.js": "03a3aeefdcbb263b50c663de743c29894d5d14cdcbe3cad33fa1b2dff1254933",
+    "shared/editor/adaptador-python.js": "7bc2106d0bf9fd4ec5765f3de0025c853f21458677a095f27f536fc8ebc90ad3",
+    "shared/editor/vida.js": "55b0c29cdff2919de9c322fd78662f332803f0f4a2c18e992b5ce00b631bd778",
+    "shared/editor/tips.js": "eec8a1b2094d1023314ba12dfaafc3bee55f6b83ac7fa2db0b606d110c06a9a4",
+    "shared/editor/edicion.js": "60e2f2ff890aea232a7e5a85496965fccfc6e0346352f947db949587daa33ee9",
+    "shared/editor/nucleo-ui.js": "1e11f57d27d95ef1f74822171e2e194bbf2c10cbdcb2516d3905556c04cfd1d7",
+    "shared/editor/editor.js": "96497d6eede1487ef0279120389e97bd43f2a396dcea4158a9121d558eb12c48",
+    "shared/vendor/LICENSE-acorn": "4b9f7d83102c222dbd662f3a84a72c44abc7814d044ed092e8325bc614400596",
+    "shared/vendor/LICENSE-lezer": "54bd812a6d334e0c438b78a43cea74b67e882739fd3450115ddc7c52be5706c1"
+  }
+}

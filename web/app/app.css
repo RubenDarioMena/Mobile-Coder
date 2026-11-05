@@ -1,0 +1,184 @@
+/* Mobile Coder · solo teléfono en vertical.
+ * Los tokens (colores, metal, letras) y las piezas del editor vienen de la copia compartida (web/cmg/).
+ * Aquí está lo que en Code Battle Lite pone el juego: reparto de la pantalla, barra superior, hoja de consola,
+ * archivos y el orden de la barra de inserción. Las reglas portadas del juego indican su origen. */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); font-family: var(--f-body); overflow: hidden; overscroll-behavior: none; }
+body { -webkit-tap-highlight-color: transparent; }
+button { font: inherit; color: inherit; }
+[hidden] { display: none !important; }
+
+/* ---------- Reparto: barra superior y editor; ocupa lo visible (con el teclado, lo que queda encima) ---------- */
+.ide {
+  position: fixed; left: 0; right: 0; top: var(--arriba-visible, 0px); height: var(--alto-visible, 100%); max-width: 640px; margin: 0 auto;
+  display: flex; flex-direction: column; min-height: 0;
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+}
+
+/* ---------- Barra superior mínima ---------- */
+.barra-sup { flex: none; display: flex; align-items: center; gap: 6px; padding: 6px 6px 4px; min-width: 0; }
+.mini {
+  display: grid; place-items: center; flex: none; width: 36px; height: 34px; padding: 0; cursor: pointer; color: var(--ink);
+  border: 1px solid var(--line); border-radius: 6px; background: var(--surface-2);
+}
+.mini svg { width: 20px; height: 20px; display: block; }
+.mini:focus-visible, .btn:focus-visible, .nombre-archivo:focus-visible, .entrada:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.mini.abierto, .mini[aria-expanded="true"] { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+.nombre-archivo {
+  flex: 1 1 auto; min-width: 0; height: 34px; display: flex; align-items: center; gap: 7px; padding: 0 10px 0 6px; cursor: pointer;
+  border: 1px solid var(--line); border-radius: 6px; background: var(--surface); text-align: left;
+}
+.nombre-archivo .nombre { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 650; font-size: 13.5px; }
+.nombre-archivo .guardado { flex: none; margin-left: auto; font-size: 13px; font-weight: 800; color: var(--warn); }
+.nombre-archivo .guardado[data-estado="error"] { color: var(--bad); }
+.chip, .lenguaje-archivo {
+  flex: none; display: inline-grid; place-items: center; min-width: 26px; height: 20px; padding: 0 5px; border-radius: 5px;
+  font: 800 10.5px var(--f-code); letter-spacing: .04em; color: var(--accent-ink); background: var(--muted);
+}
+.lenguaje-archivo:empty { display: none; }
+[data-lenguaje="python"].chip, .lenguaje-archivo[data-lenguaje="python"] { background: #E0C25A; }
+[data-lenguaje="js"].chip, .lenguaje-archivo[data-lenguaje="js"] { background: #F2E05C; }
+.acciones { flex: none; display: flex; gap: 4px; align-items: center; }
+/* ▶ es el botón principal; con el programa en marcha pasa a ■ en rojo (como en el juego). */
+.b-ejecutar .ico-stop, .b-ejecutar.corriendo .ico-play { display: none; }
+.b-ejecutar.corriendo .ico-stop { display: inline; }
+.b-ejecutar {
+  width: 46px; color: var(--accent-ink); border-color: #23407F; background: linear-gradient(180deg, #9DB8FF, #5E84EC);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .45), 0 0 0 1px #2B4A9C, 0 0 12px rgba(127, 163, 255, .25);
+}
+.b-ejecutar.corriendo { color: #1C0B09; border-color: #6E2019; background: linear-gradient(180deg, #F59A90, #D6574C); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .4), 0 0 0 1px #8C2E25; }
+/* Sin teclado: encendido, en rojo y tachado (shared/css/edicion.css: .b-teclado). */
+.barra-sup .b-teclado[aria-pressed="true"] { color: var(--bad); border-color: var(--bad); background: var(--bad-soft); box-shadow: 0 0 6px var(--bad-soft); }
+
+/* ---------- Editor: código arriba; barra de edición (ProtoMouse) e inserción al pie, donde llega el pulgar ----------
+   Mismo peso que las reglas de autonomo.css (.cmg-editor[data-autonomo] …) más la clase propia, para ganarles. */
+.raiz-editor.cmg-editor[data-autonomo] { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: 6px; padding: 0 6px 6px; position: relative; }
+/* Las herramientas propias del componente se usan desde la barra superior y el menú ⋯. */
+.raiz-editor.cmg-editor[data-autonomo] > .editor-herramientas { display: none; }
+.raiz-editor.cmg-editor[data-autonomo] > .editor, .raiz-editor.cmg-editor[data-autonomo] > .prog { order: 1; flex: 1 1 auto; height: auto; min-height: 0; }
+.raiz-editor.cmg-editor[data-autonomo] > .barra-edicion { order: 2; }
+.raiz-editor.cmg-editor[data-autonomo] > .paleta { order: 3; }
+/* La barra de símbolos no hace falta: pares y signos están en la barra de inserción. */
+.raiz-editor.cmg-editor[data-autonomo] > .simbolos { display: none; }
+.raiz-editor.cmg-editor[data-autonomo] > .aviso { position: absolute; z-index: 9; left: 14px; right: 14px; top: 8px; box-shadow: 0 8px 20px rgba(0, 0, 0, .45); }
+
+/* Barra de inserción del teléfono: dos conjuntos. Portado de Code Battle Lite
+   (Prototypes/Rocket Launcher/css/layout.css, 56435c7), con .paleta en lugar de #paleta (aquí los ids llevan prefijo).
+   Edición y sintaxis (línea nueva · tab · comentar · borrar · pares · signos) y bloques (bucles, if, operadores,
+   variable, consola). Con teclado, edición y sintaxis primero; en modo sin teclado se cambian de sitio. */
+.app.cmg-anfitrion[data-forma="movil"] .paleta:not(.paleta-seudo) .atajo.solo-movil { display: grid; order: -2; }
+.app.cmg-anfitrion[data-forma="movil"] .paleta:not(.paleta-seudo) .sep-movil { display: block; order: -1; }
+.app.cmg-anfitrion[data-forma="movil"] .paleta:not(.paleta-seudo) .atajo[data-ico="lineaNueva"] { order: -6; }
+.app.cmg-anfitrion[data-forma="movil"] .paleta:not(.paleta-seudo) .atajo[data-ico="tabular"] { order: -5; }
+.app.cmg-anfitrion[data-forma="movil"] .paleta:not(.paleta-seudo) .atajo[data-ico="comentar"] { order: -4; }
+.app.cmg-anfitrion[data-forma="movil"] .paleta:not(.paleta-seudo) .atajo[data-ico="borrar"] { order: -3; }
+.app.cmg-anfitrion[data-forma="movil"] .paleta:not(.paleta-seudo) .atajo[data-ico="comentar"] + .sep-pal { display: none; }
+.app.cmg-anfitrion[data-forma="movil"][data-sin-teclado="true"] .paleta:not(.paleta-seudo) .sep-movil { order: 1; }
+.app.cmg-anfitrion[data-forma="movil"][data-sin-teclado="true"] .paleta:not(.paleta-seudo) .atajo.solo-movil { order: 6; }
+.app.cmg-anfitrion[data-forma="movil"][data-sin-teclado="true"] .paleta:not(.paleta-seudo) .atajo[data-ico="lineaNueva"] { order: 2; }
+.app.cmg-anfitrion[data-forma="movil"][data-sin-teclado="true"] .paleta:not(.paleta-seudo) .atajo[data-ico="tabular"] { order: 3; }
+.app.cmg-anfitrion[data-forma="movil"][data-sin-teclado="true"] .paleta:not(.paleta-seudo) .atajo[data-ico="comentar"] { order: 4; }
+.app.cmg-anfitrion[data-forma="movil"][data-sin-teclado="true"] .paleta:not(.paleta-seudo) .atajo[data-ico="borrar"] { order: 5; }
+.app.cmg-anfitrion[data-forma="movil"][data-sin-teclado="true"] .paleta:not(.paleta-seudo)::after { order: 7; }
+
+/* ---------- Hoja de consola: pestaña y hoja (portado de la ficha ⓘ del teléfono del juego) ---------- */
+.hoja-abrir {
+  position: absolute; z-index: 6; right: 10px; bottom: 0; width: 50px; height: 24px; padding: 0; cursor: pointer;
+  display: grid; place-items: center; color: var(--muted); border: 1px solid var(--metal); border-bottom: 0; border-radius: 9px 9px 0 0;
+  background: linear-gradient(180deg, #48525A, #2E363D); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .18), 0 -2px 8px rgba(0, 0, 0, .35);
+}
+.hoja-abrir:hover, .hoja-abrir:focus-visible { color: var(--ink); }
+.hoja-abrir svg { width: 20px; height: 20px; }
+.hoja-abrir[aria-expanded="true"] { display: none; }
+.hoja-abrir.con-nuevo::after { content: ""; position: absolute; top: 4px; right: 6px; width: 8px; height: 8px; border-radius: 50%; background: var(--warn); box-shadow: 0 0 5px var(--warn); }
+.hoja {
+  position: absolute; z-index: 7; left: 0; right: 0; bottom: 0; height: var(--hoja-alto, 50vh); min-height: min(96px, 100%); max-height: calc(100% - 30px);
+  display: grid; grid-template-rows: auto auto minmax(0, 1fr); gap: 6px; padding: 0 10px 8px; overflow: hidden;
+  font-family: var(--f-body); font-size: 13px; color: var(--ink); background: var(--surface);
+  border-radius: 12px 12px 0 0; box-shadow: 0 0 0 1px var(--metal-negro), inset 0 1px 0 rgba(255, 255, 255, .1), 0 -10px 24px rgba(0, 0, 0, .5);
+  animation: hoja-sube .18s ease-out;
+}
+.hoja.arrastrando { animation: none; transition: none; }
+.hoja.por-cerrar { opacity: .55; }
+@keyframes hoja-sube { from { transform: translateY(40px); opacity: 0; } }
+.hoja-asa { display: grid; place-items: center; height: 22px; margin: 0 -10px -4px; cursor: row-resize; touch-action: none; -webkit-user-select: none; user-select: none; }
+.hoja-asa span { width: 56px; height: 9px; border-radius: 3px; opacity: .75; background: repeating-linear-gradient(180deg, var(--metal-hi) 0 1.5px, var(--metal-negro) 1.5px 3px); }
+.hoja-asa:hover span, .hoja-asa:focus-visible span, .hoja.arrastrando .hoja-asa span { opacity: 1; }
+.hoja-cab { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.hoja-titulo { margin: 0 4px 0 2px; font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.motor-estado { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: 12px; }
+.motor-estado[data-estado="cargando"] { color: var(--warn); }
+.motor-estado[data-estado="fallo"] { color: var(--bad); }
+.hoja .mini { width: 34px; height: 30px; }
+.consola {
+  min-height: 0; overflow: auto; overscroll-behavior: contain; padding: 6px 8px; border-radius: 8px; background: var(--code-bg);
+  box-shadow: inset 0 0 0 1px var(--metal-negro), inset 0 0 0 2px var(--line);
+  font: 12.5px/1.5 var(--f-code); white-space: pre-wrap; overflow-wrap: anywhere; -webkit-user-select: text; user-select: text;
+}
+.c-linea { min-height: 1.5em; }
+.c-info { color: #9CC8FF; }
+.c-aviso { color: var(--warn); }
+.c-error { color: var(--bad); }
+.c-inicio { color: var(--muted); margin-top: 4px; }
+.c-inicio:first-child { margin-top: 0; }
+.c-ok { color: var(--ok); font-family: var(--f-body); font-size: 12px; }
+.c-fallo { color: var(--bad); font-family: var(--f-body); font-size: 12px; font-weight: 700; }
+.c-detenido { color: var(--warn); font-family: var(--f-body); font-size: 12px; font-weight: 700; }
+.c-fin { color: var(--muted); font-family: var(--f-body); font-size: 12px; }
+.c-linea.con-linea { cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+
+/* ---------- Archivos ---------- */
+.panel {
+  position: fixed; z-index: 60; left: 0; right: 0; top: var(--arriba-visible, 0px); height: var(--alto-visible, 100%); max-width: 640px; margin: 0 auto;
+  display: flex; flex-direction: column; gap: 10px; padding: max(10px, env(safe-area-inset-top, 0px)) 12px max(12px, env(safe-area-inset-bottom, 0px));
+  background: var(--bg); animation: hoja-sube .16s ease-out;
+}
+.panel-cab { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.panel h2 { margin: 0; font-size: 18px; font-weight: 800; }
+.proyecto { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 10px; background: var(--surface); box-shadow: 0 0 0 1px var(--line); }
+.proyecto-datos { flex: 1 1 auto; min-width: 0; display: grid; gap: 2px; }
+.proyecto-datos b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+.proyecto-tipo { color: var(--muted); font-size: 11.5px; }
+.ruta { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 4px; color: var(--muted); font-size: 13px; }
+.ruta button { padding: 3px 4px; border: 0; border-radius: 5px; background: none; cursor: pointer; color: var(--accent); font-weight: 650; }
+.ruta button:last-child { color: var(--ink); }
+.lista-archivos { flex: 1 1 auto; min-height: 0; overflow: auto; margin: 0; padding: 0; list-style: none; display: grid; align-content: start; gap: 4px; }
+.lista-archivos .vacio { padding: 18px 8px; color: var(--muted); text-align: center; font-size: 13px; }
+.entrada {
+  width: 100%; min-height: 46px; display: flex; align-items: center; gap: 10px; padding: 6px 10px; cursor: pointer; text-align: left;
+  border: 0; border-radius: 8px; background: var(--surface-2); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05);
+}
+.entrada svg { flex: none; width: 22px; height: 22px; color: var(--muted); }
+.entrada.carpeta svg { color: var(--accent); }
+.entrada-nombre { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+.entrada-nota { color: var(--muted); font-size: 11.5px; }
+.entrada.abierto { box-shadow: inset 0 0 0 1px var(--accent); background: var(--accent-soft); }
+.entrada:disabled { cursor: default; opacity: .55; }
+.nota { margin: 0; min-height: 1.2em; color: var(--muted); font-size: 12.5px; }
+.nota.error { color: var(--bad); }
+.panel-pie { display: flex; gap: 8px; }
+.panel-pie .btn { flex: 1 1 0; }
+.btn {
+  min-height: 42px; padding: 0 14px; cursor: pointer; border: 1px solid var(--line); border-radius: 8px; font-weight: 700; font-size: 13.5px;
+  background: linear-gradient(180deg, #2A343C, #1E262D); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08);
+}
+.btn.primario { color: var(--accent-ink); border-color: #23407F; background: linear-gradient(180deg, #9DB8FF, #5E84EC); }
+
+/* ---------- Diálogos y menú ⋯ ---------- */
+.dialogo { width: min(420px, calc(100vw - 24px)); padding: 16px; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+.dialogo::backdrop { background: rgba(0, 0, 0, .6); }
+.dialogo form { display: grid; gap: 12px; }
+.dialogo h2 { margin: 0; font-size: 16px; }
+.dialogo label { display: grid; gap: 6px; font-size: 13px; color: var(--muted); }
+.dialogo input { min-height: 42px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--code-bg); color: var(--ink); font: 16px var(--f-code); }
+.dialogo input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.dialogo-botones { display: flex; justify-content: flex-end; gap: 8px; }
+.acerca-datos { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 12px; margin: 0; font-size: 13px; }
+.acerca-datos dt { color: var(--muted); }
+.acerca-datos dd { margin: 0; overflow-wrap: anywhere; }
+.variantes.menu { display: grid; grid-template-columns: repeat(3, 64px); overflow: visible; }
+.menu .variante { color: var(--t1); }
+.menu .variante svg { width: 26px; height: 26px; }
+.menu .variante:hover, .menu .variante:focus-visible { color: var(--c1); }
+
+.fallo-arranque { position: fixed; z-index: 99; left: 12px; right: 12px; top: 40%; margin: 0; padding: 14px; border-radius: 10px; background: var(--surface); border: 1px solid var(--bad); color: var(--ink); }

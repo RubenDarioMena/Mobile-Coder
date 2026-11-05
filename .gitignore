@@ -1,0 +1,13 @@
+# Gradle y Android
+.gradle/
+build/
+app/build/
+local.properties
+*.apk
+*.aab
+.idea/
+*.iml
+.kotlin/
+captures/
+# Node (las pruebas usan el Playwright instalado en el sistema)
+node_modules/

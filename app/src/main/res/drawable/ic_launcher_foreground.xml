@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Un indicador de terminal «> _» sobre una placa: el acento azul y la tinta del editor. Zona segura: el círculo central de 66 dp. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#26313A"
+        android:pathData="M34,33h40a7,7 0,0 1,7,7v28a7,7 0,0 1,-7,7h-40a7,7 0,0 1,-7,-7v-28a7,7 0,0 1,7,-7z" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M39,44 L49,54 L39,64"
+        android:strokeColor="#7FA3FF"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:strokeWidth="5" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M55,64 L69,64"
+        android:strokeColor="#DCE3E6"
+        android:strokeLineCap="round"
+        android:strokeWidth="5" />
+</vector>

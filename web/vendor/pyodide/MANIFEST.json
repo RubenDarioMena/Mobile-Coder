@@ -1,0 +1,17 @@
+{
+  "nota": "Archivos de ejecución de Pyodide sin modificar. Se regeneran con herramientas/pyodide.mjs.",
+  "paquete": "pyodide@314.0.7",
+  "origen": "https://registry.npmjs.org/pyodide/-/pyodide-314.0.7.tgz",
+  "integridad": "sha512-0YvXxEhfEdpLfb/XkM2BFAeMROq0iMUX2bzzH9pOttyMcWkwq+HbE5uyuGD82LN7y2q+SNvi/6V5JEsOlD2R1A==",
+  "python": "3.14.2",
+  "licencias": "Pyodide: MPL-2.0 (LICENSE-pyodide). CPython y su biblioteca estándar: PSF-2.0 (LICENSE-cpython).",
+  "archivos": {
+    "pyodide.mjs": "6f1d60f7bf529beb300f0f47983c921d3982363640ba20af0e38efdddbc66109",
+    "pyodide.asm.mjs": "f7cdc8ece80678ceb712f8e65ebe6d3a83203a180c399865f49612a051693635",
+    "pyodide.asm.wasm": "cc36e3cab04fdfc9a63ff13eb52eae2b911bf46c025cc7b281f394bd3de1d5e6",
+    "python_stdlib.zip": "fa1957e5777068fc4f7437f96d860ae2fbe9c19732ba06c84e004ec16dd7dd7a",
+    "pyodide-lock.json": "5dc2fc119108bc148c7457dc86e7675b5c87e1cafd420b9c34c1eaef7b36c010",
+    "LICENSE-pyodide": "1f256ecad192880510e84ad60474eab7589218784b9a50bc7ceee34c2b91f1d5",
+    "LICENSE-cpython": "b0e25a78cffb43f4d92de8b61ccfa1f1f98ecbc22330b54b5251e7b6ba010231"
+  }
+}
